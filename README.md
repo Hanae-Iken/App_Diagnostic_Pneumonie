@@ -1,1 +1,1 @@
-# Projet Pneumonie - Diagnostic IA
+# App_Diagnostic_Pneumonie
