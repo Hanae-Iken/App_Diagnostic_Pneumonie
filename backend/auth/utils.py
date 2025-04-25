@@ -27,7 +27,6 @@ def decode_token(token):
         return None
 
 # Middleware pour route protégée
-# Middleware pour route protégée
 def token_required(f):
     def decorator(*args, **kwargs):
         token = request.headers.get("Authorization")
