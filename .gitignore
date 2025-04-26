@@ -5,6 +5,7 @@ ia/models/
 # # *.pyc
 # .venv/
 
+ia/configs/
 .venv/
 __pycache__/
 *.pyc
@@ -12,3 +13,7 @@ __pycache__/
 *.pyd
 env/
 venv/
+.vscode/
+
+
+
