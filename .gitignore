@@ -1,6 +1,6 @@
 # # Fichiers à ignorer
-# # ia/data/
-# # ia/models/
+ia/data/
+ia/models/
 # # __pycache__/
 # # *.pyc
 # .venv/
