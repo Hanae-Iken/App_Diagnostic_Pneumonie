@@ -1,113 +1,91 @@
-# api/prediction.py
-import os
-import sys
 import numpy as np
-from pathlib import Path
-from tensorflow.keras.models import load_model
+import cv2
+import tensorflow as tf
+from PIL import Image
+import sys
+import os
 
-# Ajouter le répertoire racine au chemin Python
+# Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.data.data_preprocessing import preprocess_image
-from src.model.resnet50_model import get_last_conv_layer_name
-from src.visualization.gradcam import make_gradcam_heatmap, get_img_array
+# Import visualization module if needed
+# from src.visualization.gradcam import GradCAM
 
 class PneumoniaPredictor:
-    def __init__(self, model_path=None):
+    def __init__(self, model_path, img_size=224):
         """
-        Initialise le prédicteur de pneumonie.
+        Initialize the pneumonia predictor
         
         Args:
-            model_path: Chemin vers le modèle entraîné
+            model_path (str): Path to the trained model
+            img_size (int): Size to which images will be resized
         """
-        if model_path is None:
-            model_path = os.path.join('models', 'resnet50_finetune.h5')
+        self.model = tf.keras.models.load_model(model_path)
+        self.img_size = img_size
+        self.class_names = ['NORMAL', 'PNEUMONIA']
         
-        self.model_path = model_path
-        self.model = None
-        self.load_model()
-    
-    def load_model(self):
-        """Charge le modèle de détection de pneumonie."""
-        try:
-            self.model = load_model(self.model_path)
-            print(f"Modèle chargé depuis {self.model_path}")
-        except Exception as e:
-            print(f"Erreur lors du chargement du modèle: {e}")
-            raise
-    
-    def predict(self, image_path):
+    def preprocess_image(self, image):
         """
-        Fait une prédiction sur une image.
+        Preprocess image for prediction
         
         Args:
-            image_path: Chemin vers l'image à analyser
+            image (PIL.Image or numpy.ndarray): Input image
             
         Returns:
-            Classe prédite, confiance, heatmap
+            numpy.ndarray: Preprocessed image
         """
-        if self.model is None:
-            raise ValueError("Le modèle n'est pas chargé.")
+        # Convert PIL Image to numpy array if needed
+        if isinstance(image, Image.Image):
+            image = np.array(image)
+            
+        # Convert to RGB if grayscale
+        if len(image.shape) == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        elif image.shape[2] == 1:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         
-        # Prétraiter l'image
-        img_array, _ = self.preprocess_image(image_path)
+        # Resize image
+        image = cv2.resize(image, (self.img_size, self.img_size))
         
-        # Prédiction
-        prediction = self.model.predict(img_array)[0][0]
-        predicted_class = "PNEUMONIE" if prediction > 0.5 else "NORMAL"
-        confidence = prediction if prediction > 0.5 else 1 - prediction
+        # Normalize pixel values to [0, 1]
+        image = image / 255.0
         
-        # Générer la heatmap Grad-CAM
-        last_conv_layer = get_last_conv_layer_name(self.model)
-        heatmap = make_gradcam_heatmap(img_array, self.model, last_conv_layer)
+        return image
+    
+    def predict(self, image):
+        """
+        Make prediction for an image
         
-        return {
-            "predicted_class": predicted_class,
+        Args:
+            image (PIL.Image or numpy.ndarray): Input image
+            
+        Returns:
+            dict: Prediction results
+        """
+        # Preprocess image
+        processed_img = self.preprocess_image(image)
+        
+        # Add batch dimension
+        input_img = np.expand_dims(processed_img, axis=0)
+        
+        # Make prediction
+        predictions = self.model.predict(input_img)
+        predicted_class_idx = np.argmax(predictions[0])
+        predicted_class = self.class_names[predicted_class_idx]
+        confidence = float(predictions[0][predicted_class_idx])
+        
+        # Generate GradCAM if needed
+        # gradcam = GradCAM(self.model)
+        # heatmap = gradcam.compute_heatmap(processed_img)
+        
+        # Return results
+        result = {
+            "prediction": predicted_class,
             "confidence": confidence,
-            "heatmap": heatmap,
-            "raw_prediction": prediction
+            "probabilities": {
+                self.class_names[i]: float(predictions[0][i])
+                for i in range(len(self.class_names))
+            }
         }
-    
-    def preprocess_image(self, image_path, target_size=(224, 224)):
-        """
-        Prétraite une image pour la prédiction.
         
-        Args:
-            image_path: Chemin vers l'image
-            target_size: Taille cible pour le redimensionnement
-            
-        Returns:
-            Image prétraitée pour le modèle
-        """
-        # Utilisez la fonction de prétraitement existante
-        processed_img = preprocess_image(image_path, target_size)
-        
-        # Préparer pour le modèle (ajouter la dimension du batch)
-        img_array = np.expand_dims(processed_img, axis=0)
-        
-        return img_array, processed_img
-
-# Fonction d'utilité pour les tests
-def test_predictor(image_path, model_path=None):
-    """
-    Teste le prédicteur sur une image spécifique.
-    
-    Args:
-        image_path: Chemin vers l'image de test
-        model_path: Chemin vers le modèle entraîné (optionnel)
-    """
-    predictor = PneumoniaPredictor(model_path)
-    result = predictor.predict(image_path)
-    
-    print(f"Image: {image_path}")
-    print(f"Classe prédite: {result['predicted_class']}")
-    print(f"Confiance: {result['confidence']*100:.2f}%")
-    print(f"Prédiction brute: {result['raw_prediction']:.4f}")
-    
-    return result
-
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        test_predictor(sys.argv[1])
-    else:
-        print("Usage: python prediction.py <chemin_image>")
+        return result

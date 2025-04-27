@@ -1,165 +1,140 @@
-# train_model.py - Script complet pour l'entraînement du modèle
 import os
-import sys
-import argparse
-import tensorflow as tf
+import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
+from tensorflow.keras.models import load_model
 
-# Ajouter le répertoire racine au chemin Python
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Ajoutez le répertoire racine au PYTHONPATH
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
-from src.data.data_loader import load_and_augment_training_data, get_class_distribution
-from src.model.resnet50_model import create_resnet50_model
-# from src.model.model_training import (
-#     train_model, 
-#     fine_tune_and_train, 
-#     evaluate_model, 
-#     plot_training_history, 
-#     plot_confusion_matrix, 
-#     print_classification_report
-# )
-
-def parse_arguments():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Entraînement du modèle ResNet50 pour la détection de pneumonie')
-    parser.add_argument('--data_dir', type=str, default='data/processed',
-                        help='Répertoire contenant les données prétraitées')
-    parser.add_argument('--models_dir', type=str, default='models',
-                        help='Répertoire pour sauvegarder les modèles')
-    parser.add_argument('--epochs', type=int, default=20,
-                        help='Nombre d\'époques pour l\'entraînement initial')
-    parser.add_argument('--fine_tune_epochs', type=int, default=10,
-                        help='Nombre d\'époques pour le fine-tuning')
-    parser.add_argument('--batch_size', type=int, default=32,
-                        help='Taille des lots pour l\'entraînement')
-    parser.add_argument('--image_size', type=int, default=224,
-                        help='Taille des images (côté)')
-    return parser.parse_args()
-
-def main():
-    # Analyser les arguments
-    args = parse_arguments()
+class PneumoniaModelTrainer:
+    def __init__(self, model, train_gen, val_gen, test_gen):
+        """
+        Initialize the model trainer
+        
+        Args:
+            model (tf.keras.Model): Model to train
+            train_gen: Training data generator
+            val_gen: Validation data generator
+            test_gen: Test data generator
+        """
+        self.model = model
+        self.train_gen = train_gen
+        self.val_gen = val_gen
+        self.test_gen = test_gen
+        self.history = None
+        
+    def compile_model(self, optimizer, loss='categorical_crossentropy', metrics=['accuracy']):
+        """
+        Compile the model
+        
+        Args:
+            optimizer: Optimizer to use
+            loss (str): Loss function
+            metrics (list): Metrics to track
+        """
+        self.model.compile(
+            optimizer=optimizer,
+            loss=loss,
+            metrics=metrics
+        )
     
-    # Configuration
-    IMAGE_SIZE = (args.image_size, args.image_size)
-    BATCH_SIZE = args.batch_size
-    EPOCHS = args.epochs
-    EPOCHS_FINE_TUNE = args.fine_tune_epochs
+    def train(self, epochs=10, callbacks=None, steps_per_epoch=None, validation_steps=None):
+        """
+        Train the model
+        
+        Args:
+            epochs (int): Number of epochs to train
+            callbacks (list): List of callbacks
+            steps_per_epoch (int): Steps per epoch
+            validation_steps (int): Validation steps
+            
+        Returns:
+            History object containing training metrics
+        """
+        if steps_per_epoch is None:
+            steps_per_epoch = len(self.train_gen)
+        
+        if validation_steps is None:
+            validation_steps = len(self.val_gen)
+        
+        self.history = self.model.fit(
+            self.train_gen,
+            epochs=epochs,
+            validation_data=self.val_gen,
+            callbacks=callbacks,
+            steps_per_epoch=steps_per_epoch,
+            validation_steps=validation_steps
+        )
+        
+        return self.history
     
-    # Répertoires de données
-    train_dir = os.path.join(args.data_dir, 'train')
-    val_dir = os.path.join(args.data_dir, 'val')
-    test_dir = os.path.join(args.data_dir, 'test')
+    def evaluate(self):
+        """
+        Evaluate the model on test data
+        
+        Returns:
+            tuple: (loss, accuracy)
+        """
+        test_loss, test_accuracy = self.model.evaluate(self.test_gen)
+        print(f"Test Loss: {test_loss:.4f}")
+        print(f"Test Accuracy: {test_accuracy:.4f}")
+        
+        return test_loss, test_accuracy
     
-    # Créer les répertoires pour les modèles
-    os.makedirs(args.models_dir, exist_ok=True)
-    checkpoint_dir = os.path.join(args.models_dir, 'checkpoints')
-    os.makedirs(checkpoint_dir, exist_ok=True)
+    def save_model(self, model_path):
+        """
+        Save the model
+        
+        Args:
+            model_path (str): Path to save the model
+        """
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        self.model.save(model_path)
+        print(f"Model saved to {model_path}")
     
-    # Vérifier la distribution des classes
-    print("Distribution des classes:")
-    print("Entraînement:", get_class_distribution(train_dir))
-    print("Validation:", get_class_distribution(val_dir))
-    print("Test:", get_class_distribution(test_dir))
+    def load_model(self, model_path):
+        """
+        Load a saved model
+        
+        Args:
+            model_path (str): Path to the saved model
+            
+        Returns:
+            tf.keras.Model: Loaded model
+        """
+        self.model = load_model(model_path)
+        return self.model
     
-    # Charger les données
-    print("Chargement des données...")
-    train_generator, val_generator = load_and_augment_training_data(
-        train_dir, val_dir, 
-        target_size=IMAGE_SIZE, 
-        batch_size=BATCH_SIZE
-    )
-    
-    # Générateur de test sans augmentation
-    test_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255).flow_from_directory(
-        test_dir,
-        target_size=IMAGE_SIZE,
-        batch_size=BATCH_SIZE,
-        class_mode='binary',
-        shuffle=False
-    )
-    
-    # Créer le modèle
-    print("Création du modèle ResNet50...")
-    model = create_resnet50_model(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    model.summary()
-    
-    # Entraînement initial
-    print(f"Démarrage de l'entraînement initial ({EPOCHS} époques)...")
-    history = train_model(
-        model, 
-        train_generator, 
-        val_generator, 
-        epochs=EPOCHS,
-        checkpoint_dir=checkpoint_dir,
-        model_name='resnet50_base'
-    )
-    
-    # Sauvegarder le modèle de base
-    base_model_path = os.path.join(args.models_dir, 'resnet50_base.h5')
-    model.save(base_model_path)
-    print(f"Modèle de base sauvegardé à {base_model_path}")
-    
-    # Visualiser les résultats d'entraînement
-    plot_training_history(history)
-    
-    # Fine-tuning
-    print(f"Démarrage du fine-tuning ({EPOCHS_FINE_TUNE} époques)...")
-    fine_tuned_model, history_fine_tune = fine_tune_and_train(
-        model,
-        train_generator,
-        val_generator,
-        fine_tune_epochs=EPOCHS_FINE_TUNE,
-        checkpoint_dir=checkpoint_dir,
-        model_name='resnet50_finetune'
-    )
-    
-    # Sauvegarder le modèle final
-    final_model_path = os.path.join(args.models_dir, 'resnet50_finetune.h5')
-    fine_tuned_model.save(final_model_path)
-    print(f"Modèle après fine-tuning sauvegardé à {final_model_path}")
-    
-    # Visualiser les résultats du fine-tuning
-    plot_training_history(history_fine_tune)
-    
-    # Évaluation sur l'ensemble de test
-    print("Évaluation sur l'ensemble de test...")
-    test_results, predictions, predictions_binary, true_labels = evaluate_model(
-        fine_tuned_model, 
-        test_generator
-    )
-    
-    # Afficher les métriques
-    print(f"Résultats du test - Perte: {test_results[0]:.4f}, Précision: {test_results[1]:.4f}")
-    if len(test_results) > 2:
-        print(f"Precision: {test_results[2]:.4f}, Recall: {test_results[3]:.4f}, AUC: {test_results[4]:.4f}")
-    
-    # Afficher la matrice de confusion
-    cm = plot_confusion_matrix(true_labels, predictions_binary)
-    
-    # Afficher le rapport de classification
-    report = print_classification_report(true_labels, predictions_binary)
-    
-    # Sauvegarder les métriques
-    metrics_path = os.path.join(args.models_dir, 'evaluation_metrics.txt')
-    with open(metrics_path, 'w') as f:
-        f.write(f"Perte: {test_results[0]:.4f}\n")
-        f.write(f"Précision: {test_results[1]:.4f}\n")
-        if len(test_results) > 2:
-            f.write(f"Precision: {test_results[2]:.4f}\n")
-            f.write(f"Recall: {test_results[3]:.4f}\n")
-            f.write(f"AUC: {test_results[4]:.4f}\n")
-        f.write("\nMatrice de confusion:\n")
-        f.write(str(cm))
-        f.write("\n\nRapport de classification:\n")
-        f.write(report)
-    
-    print(f"Métriques d'évaluation sauvegardées à {metrics_path}")
-    print("Entraînement et évaluation terminés avec succès!")
-
-if __name__ == "__main__":
-    main()
+    def plot_training_history(self, save_path=None):
+        """
+        Plot training history
+        
+        Args:
+            save_path (str, optional): Path to save the plot
+        """
+        if self.history is None:
+            print("No training history available")
+            return
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+        
+        # Plot accuracy
+        ax1.plot(self.history.history['accuracy'])
+        ax1.plot(self.history.history['val_accuracy'])
+        ax1.set_title('Model Accuracy')
+        ax1.set_ylabel('Accuracy')
+        ax1.set_xlabel('Epoch')
+        ax1.legend(['Train', 'Validation'], loc='lower right')
+        
+        # Plot loss
+        ax2.plot(self.history.history['loss'])
+        ax2.plot(self.history.history['val_loss'])
+        ax2.set_title('Model Loss')
+        ax2.set_ylabel('Loss')
+        ax2.set_xlabel('Epoch')
+        ax2.legend(['Train', 'Validation'], loc='upper right')
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path)
+            
+        plt.show()

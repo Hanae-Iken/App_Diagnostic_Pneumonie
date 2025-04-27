@@ -1,8 +1,0 @@
-data:
-  raw_dir: "./data/raw"
-  processed_dir: "./data/processed"
-  splits_dir: "./data/splits"
-  img_size: [224, 224]
-  batch_size: 32
-  validation_split: 0.2
-  test_split: 0.1

@@ -1,75 +1,115 @@
 import tensorflow as tf
 from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, Dropout, GlobalAveragePooling2D
 
-def create_resnet50_model(input_shape=(224, 224, 3), weights='imagenet'):
-    """
-    Crée un modèle ResNet50 pour la détection de pneumonie.
-    
-    Args:
-        input_shape: Dimensions des images d'entrée
-        weights: Poids pré-entraînés ('imagenet' ou None)
+class PneumoniaResNet50:
+    def __init__(self, input_shape=(224, 224, 3), num_classes=2):
+        """
+        Initialize the ResNet50 model for pneumonia detection
         
-    Returns:
-        Un modèle Keras compilé
-    """
-    # Modèle de base ResNet50
-    base_model = ResNet50(weights=weights, include_top=False, input_shape=input_shape)
+        Args:
+            input_shape (tuple): Input shape of the model
+            num_classes (int): Number of output classes
+        """
+        self.input_shape = input_shape
+        self.num_classes = num_classes
+        
+    def build_base_model(self, trainable=False):
+        """
+        Build the base ResNet50 model with pre-trained weights
+        
+        Args:
+            trainable (bool): Whether to make the base model trainable
+            
+        Returns:
+            tf.keras.Model: Base ResNet50 model
+        """
+        base_model = ResNet50(
+            include_top=False,
+            weights='imagenet',
+            input_shape=self.input_shape
+        )
+        
+        # Freeze/unfreeze base model layers
+        for layer in base_model.layers:
+            layer.trainable = trainable
+            
+        return base_model
     
-    # Geler les couches du modèle de base
-    for layer in base_model.layers:
-        layer.trainable = False
+    def build_model(self, trainable=False):
+        """
+        Build the complete model with custom classification head
+        
+        Args:
+            trainable (bool): Whether to make the base model trainable
+            
+        Returns:
+            tf.keras.Model: Complete pneumonia detection model
+        """
+        base_model = self.build_base_model(trainable)
+        
+        # Add custom classification head
+        x = base_model.output
+        x = GlobalAveragePooling2D()(x)
+        x = Dense(1024, activation='relu')(x)
+        x = Dropout(0.3)(x)
+        x = Dense(512, activation='relu')(x)
+        x = Dropout(0.3)(x)
+        outputs = Dense(self.num_classes, activation='softmax')(x)
+        
+        model = Model(inputs=base_model.input, outputs=outputs)
+        
+        return model
     
-    # Ajouter des couches personnalisées
-    x = base_model.output
-    x = GlobalAveragePooling2D()(x)
-    x = Dense(512, activation='relu')(x)
-    x = Dropout(0.5)(x)
+    def get_optimizer(self, optimizer_name='adam', learning_rate=0.001):
+        """
+        Get the optimizer for training
+        
+        Args:
+            optimizer_name (str): Name of the optimizer (adam, sgd, rmsprop)
+            learning_rate (float): Learning rate
+            
+        Returns:
+            tf.keras.optimizers.Optimizer: Configured optimizer
+        """
+        optimizers = {
+            'adam': tf.keras.optimizers.Adam(learning_rate=learning_rate),
+            'sgd': tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.9),
+            'rmsprop': tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+        }
+        
+        return optimizers.get(optimizer_name.lower(), optimizers['adam'])
     
-    # Couche de sortie (classification binaire: normal vs pneumonie)
-    predictions = Dense(1, activation='sigmoid')(x)
-    
-    # Créer le modèle final
-    model = Model(inputs=base_model.input, outputs=predictions)
-    
-    # Compiler le modèle
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-        loss='binary_crossentropy',
-        metrics=['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), tf.keras.metrics.AUC()]
-    )
-    
-    return model
-
-def fine_tune_resnet50(model, num_layers_to_unfreeze=30):
-    """
-    Débloque les dernières couches du modèle ResNet50 pour fine-tuning.
-    
-    Args:
-        model: Modèle ResNet50 pré-entraîné
-        num_layers_to_unfreeze: Nombre de couches à débloquer depuis la fin
-    """
-    # Débloquer les dernières couches
-    for layer in model.layers[-num_layers_to_unfreeze:]:
-        if hasattr(layer, 'trainable'):
-            layer.trainable = True
-    
-    # Recompiler avec un taux d'apprentissage plus faible
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
-        loss='binary_crossentropy',
-        metrics=['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), tf.keras.metrics.AUC()]
-    )
-    
-    return model
-
-def get_last_conv_layer_name(model):
-    """
-    Récupère le nom de la dernière couche de convolution du modèle ResNet50.
-    Utile pour Grad-CAM.
-    """
-    for i in range(len(model.layers)-1, -1, -1):
-        if 'conv' in model.layers[i].name:
-            return model.layers[i].name
-    return None
+    def get_callbacks(self, model_path, patience=5):
+        """
+        Get callbacks for training
+        
+        Args:
+            model_path (str): Path to save the best model
+            patience (int): Patience for early stopping
+            
+        Returns:
+            list: List of callbacks
+        """
+        callbacks = [
+            tf.keras.callbacks.ModelCheckpoint(
+                model_path, 
+                monitor='val_accuracy', 
+                save_best_only=True, 
+                mode='max'
+            ),
+            tf.keras.callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=patience,
+                restore_best_weights=True
+            ),
+            tf.keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.2,
+                patience=3,
+                min_lr=1e-6
+            )
+        ]
+        
+        return callbacks

@@ -1,114 +1,132 @@
 import os
 import cv2
 import numpy as np
-import pandas as pd
-from pathlib import Path
+from tqdm import tqdm
+import shutil
 
-def preprocess_image(image_path, target_size=(224, 224)):
-    """
-    Prétraite une image pour ResNet50.
-    
-    Args:
-        image_path: Chemin de l'image
-        target_size: Taille cible pour le redimensionnement
+class PneumoniaDataPreprocessor:
+    def __init__(self, raw_data_dir, processed_data_dir, img_size=224):
+        """
+        Initialize the data preprocessor
         
-    Returns:
-        Image prétraitée
-    """
-    # Charger l'image
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError(f"Impossible de charger l'image: {image_path}")
-    
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    
-    # Redimensionner
-    image = cv2.resize(image, target_size)
-    
-    # Normaliser pour ResNet50
-    image = image / 255.0
-    
-    return image
-
-def process_dataset(input_dir, output_dir, target_size=(224, 224)):
-    """
-    Prétraite toutes les images d'un répertoire pour ResNet50.
-    
-    Args:
-        input_dir: Répertoire des images brutes
-        output_dir: Répertoire pour les images prétraitées
-        target_size: Taille cible pour le redimensionnement
+        Args:
+            raw_data_dir (str): Directory containing raw data
+            processed_data_dir (str): Directory where processed data will be saved
+            img_size (int): Size to which images will be resized
+        """
+        self.raw_data_dir = raw_data_dir
+        self.processed_data_dir = processed_data_dir
+        self.img_size = img_size
+        self.labels = ['NORMAL', 'PNEUMONIA']
         
-    Returns:
-        DataFrame avec les métadonnées des images
-    """
-    os.makedirs(output_dir, exist_ok=True)
+    def create_directory_structure(self):
+        """Create the directory structure for processed data"""
+        for split in ['train', 'val', 'test']:
+            for label in self.labels:
+                os.makedirs(os.path.join(self.processed_data_dir, split, label), exist_ok=True)
     
-    metadata = []
-    
-    # Parcourir les classes (NORMAL, PNEUMONIA)
-    for class_name in os.listdir(input_dir):
-        class_dir = os.path.join(input_dir, class_name)
-        if not os.path.isdir(class_dir):
-            continue
+    def preprocess_and_save(self):
+        """Preprocess images and save them to the processed directory"""
+        self.create_directory_structure()
+        
+        for split in ['train', 'val', 'test']:
+            split_dir = os.path.join(self.raw_data_dir, split)
             
-        output_class_dir = os.path.join(output_dir, class_name)
-        os.makedirs(output_class_dir, exist_ok=True)
-        
-        # Parcourir les images
-        for image_file in os.listdir(class_dir):
-            if not image_file.lower().endswith(('.png', '.jpg', '.jpeg')):
+            if not os.path.exists(split_dir):
+                print(f"Warning: {split_dir} does not exist. Skipping.")
                 continue
                 
-            input_path = os.path.join(class_dir, image_file)
-            output_path = os.path.join(output_class_dir, image_file)
-            
-            # Prétraiter et sauvegarder l'image
-            try:
-                processed_image = preprocess_image(input_path, target_size)
-                cv2.imwrite(
-                    output_path, 
-                    cv2.cvtColor((processed_image * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
-                )
+            for label in self.labels:
+                label_dir = os.path.join(split_dir, label)
                 
-                # Ajouter aux métadonnées
-                metadata.append({
-                    'filename': image_file,
-                    'class': class_name,
-                    'label': 1 if class_name == 'PNEUMONIA' else 0,
-                    'original_path': input_path,
-                    'processed_path': output_path
-                })
-            except Exception as e:
-                print(f"Erreur lors du traitement de {input_path}: {e}")
+                if not os.path.exists(label_dir):
+                    print(f"Warning: {label_dir} does not exist. Skipping.")
+                    continue
+                
+                output_dir = os.path.join(self.processed_data_dir, split, label)
+                
+                # Process all images in the directory
+                img_files = os.listdir(label_dir)
+                for img_file in tqdm(img_files, desc=f"Processing {split}/{label}"):
+                    try:
+                        img_path = os.path.join(label_dir, img_file)
+                        if not os.path.isfile(img_path):
+                            continue
+                            
+                        # Read and preprocess image
+                        img = cv2.imread(img_path)
+                        if img is None:
+                            continue
+                            
+                        # Apply preprocessing
+                        processed_img = self._preprocess_image(img)
+                        
+                        # Save processed image
+                        output_path = os.path.join(output_dir, img_file)
+                        cv2.imwrite(output_path, processed_img)
+                    
+                    except Exception as e:
+                        print(f"Error processing {img_file}: {e}")
     
-    # Créer un DataFrame avec les métadonnées
-    metadata_df = pd.DataFrame(metadata)
-    
-    return metadata_df
-
-def main():
-    # Chemins des répertoires
-    base_dir = Path('data')
-    raw_data_dir = base_dir / 'raw'
-    processed_data_dir = base_dir / 'processed'
-    
-    # Créer les répertoires nécessaires
-    os.makedirs(processed_data_dir, exist_ok=True)
-    
-    # Prétraiter les ensembles de données
-    for dataset in ['train', 'test', 'val']:
-        print(f"Prétraitement de l'ensemble {dataset}...")
-        input_dir = raw_data_dir / dataset
-        output_dir = processed_data_dir / dataset
+    def _preprocess_image(self, img):
+        """
+        Apply preprocessing to an image
         
-        metadata_df = process_dataset(input_dir, output_dir)
+        Args:
+            img (numpy.ndarray): Input image
+            
+        Returns:
+            numpy.ndarray: Preprocessed image
+        """
+        # Convert to grayscale
+        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Sauvegarder les métadonnées
-        os.makedirs(base_dir, exist_ok=True)
-        metadata_df.to_csv(base_dir / f"{dataset}_metadata.csv", index=False)
+        # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        # clahe_img = clahe.apply(gray)
         
-        print(f"Terminé! {len(metadata_df)} images traitées.")
-
-if __name__ == "__main__":
-    main()
+        # Resize to target size
+        resized = cv2.resize(img, (self.img_size, self.img_size))
+        
+        # Optional: Normalize pixel values to [0, 255]
+        # normalized = cv2.normalize(resized, None, 0, 255, cv2.NORM_MINMAX)
+        
+        return resized
+    
+    def balance_classes(self, max_samples_per_class=None):
+        """
+        Balance classes by under-sampling the majority class
+        
+        Args:
+            max_samples_per_class (int, optional): Maximum number of samples per class
+        """
+        for split in ['train', 'val', 'test']:
+            split_dir = os.path.join(self.processed_data_dir, split)
+            
+            if not os.path.exists(split_dir):
+                continue
+                
+            # Count samples per class
+            class_counts = {}
+            for label in self.labels:
+                label_dir = os.path.join(split_dir, label)
+                if os.path.exists(label_dir):
+                    class_counts[label] = len(os.listdir(label_dir))
+            
+            # Determine target count
+            if max_samples_per_class:
+                target_count = max_samples_per_class
+            else:
+                target_count = min(class_counts.values())
+            
+            # Balance classes
+            for label, count in class_counts.items():
+                if count > target_count:
+                    label_dir = os.path.join(split_dir, label)
+                    files = os.listdir(label_dir)
+                    files_to_remove = np.random.choice(files, size=count-target_count, replace=False)
+                    
+                    for file in files_to_remove:
+                        os.remove(os.path.join(label_dir, file))
+                    
+                    print(f"Balanced {split}/{label}: {count} -> {target_count} images")
