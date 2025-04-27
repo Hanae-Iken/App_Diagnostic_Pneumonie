@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import shutil
 
-class PneumoniaDataPreprocessor:
+class DataPreprocessor:
     def __init__(self, raw_data_dir, processed_data_dir, img_size=224):
         """
         Initialize the data preprocessor

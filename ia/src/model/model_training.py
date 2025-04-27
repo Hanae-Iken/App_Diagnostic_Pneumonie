@@ -1,140 +1,173 @@
 import os
-import numpy as np
-import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
+import argparse
+import tensorflow as tf
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 
-class PneumoniaModelTrainer:
-    def __init__(self, model, train_gen, val_gen, test_gen):
-        """
-        Initialize the model trainer
-        
-        Args:
-            model (tf.keras.Model): Model to train
-            train_gen: Training data generator
-            val_gen: Validation data generator
-            test_gen: Test data generator
-        """
-        self.model = model
-        self.train_gen = train_gen
-        self.val_gen = val_gen
-        self.test_gen = test_gen
-        self.history = None
-        
-    def compile_model(self, optimizer, loss='categorical_crossentropy', metrics=['accuracy']):
-        """
-        Compile the model
-        
-        Args:
-            optimizer: Optimizer to use
-            loss (str): Loss function
-            metrics (list): Metrics to track
-        """
-        self.model.compile(
-            optimizer=optimizer,
-            loss=loss,
-            metrics=metrics
+from .model_trainer import PneumoniaModelTrainer
+from .resnet50_model import ResNet50Model
+from ..data.data_loader import create_data_generators
+
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Train ResNet50 model for pneumonia detection')
+    parser.add_argument('--base_model', type=str, default=None,
+                      help='Path to pre-trained model to continue training')
+    parser.add_argument('--batch_size', type=int, default=32,
+                      help='Batch size for training')
+    parser.add_argument('--img_size', type=int, default=224,
+                      help='Image size for model input')
+    parser.add_argument('--epochs', type=int, default=20,
+                      help='Number of epochs for each training phase')
+    parser.add_argument('--lr', type=float, default=1e-4,
+                      help='Initial learning rate')
+    parser.add_argument('--fine_tune', action='store_true',
+                      help='Whether to perform fine-tuning after base training')
+    parser.add_argument('--unfreeze_layers', type=int, default=15,
+                      help='Number of layers to unfreeze during fine-tuning')
+    return parser.parse_args()
+
+def train_model(args=None):
+    """Function to train the model with given arguments"""
+    if args is None:
+        args = parse_args()
+    
+    print("Starting pneumonia detection model training...")
+    print(f"Batch size: {args.batch_size}, Image size: {args.img_size}x{args.img_size}")
+    
+    # Create models directory if it doesn't exist
+    models_dir = os.path.join(os.path.dirname(__file__), "../../../models")
+    os.makedirs(models_dir, exist_ok=True)
+    
+    # Create data generators
+    train_gen, val_gen, test_gen = create_data_generators(
+        batch_size=args.batch_size, 
+        img_size=(args.img_size, args.img_size)
+    )
+    
+    # Initialize and build model
+    if args.base_model and os.path.exists(args.base_model):
+        print(f"Loading model from {args.base_model}")
+        model = tf.keras.models.load_model(args.base_model)
+    else:
+        print("Creating new ResNet50 model")
+        resnet_model = ResNet50Model(
+            input_shape=(args.img_size, args.img_size, 3),
+            num_classes=len(train_gen.class_indices)
         )
+        model = resnet_model.build(trainable_base=False)
     
-    def train(self, epochs=10, callbacks=None, steps_per_epoch=None, validation_steps=None):
-        """
-        Train the model
+    # Create model trainer
+    trainer = PneumoniaModelTrainer(
+        model=model,
+        train_gen=train_gen,
+        val_gen=val_gen,
+        test_gen=test_gen
+    )
+    
+    # Compile model
+    trainer.compile_model(
+        optimizer=Adam(learning_rate=args.lr),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    # Create callbacks for base model
+    base_model_path = os.path.join(models_dir, "resnet50_base.h5")
+    callbacks = [
+        ModelCheckpoint(
+            base_model_path,
+            monitor='val_accuracy',
+            save_best_only=True,
+            mode='max',
+            verbose=1
+        ),
+        EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True,
+            verbose=1
+        ),
+        ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.1,
+            patience=5,
+            min_lr=1e-6,
+            verbose=1
+        )
+    ]
+    
+    # Train base model
+    print("Training base model...")
+    history = trainer.train(
+        epochs=args.epochs,
+        callbacks=callbacks
+    )
+    
+    # Evaluate the model
+    trainer.evaluate()
+    
+    # Plot training history
+    history_plot_path = os.path.join(models_dir, "base_model_history.png")
+    trainer.plot_training_history(save_path=history_plot_path)
+    
+    # Load the best model
+    model = trainer.load_model(base_model_path)
+    
+    # Fine-tune if requested
+    if args.fine_tune:
+        print(f"Fine-tuning model by unfreezing {args.unfreeze_layers} layers...")
         
-        Args:
-            epochs (int): Number of epochs to train
-            callbacks (list): List of callbacks
-            steps_per_epoch (int): Steps per epoch
-            validation_steps (int): Validation steps
-            
-        Returns:
-            History object containing training metrics
-        """
-        if steps_per_epoch is None:
-            steps_per_epoch = len(self.train_gen)
+        # Unfreeze top layers for fine-tuning
+        if not args.base_model:  # Only if we started with a new model
+            resnet_model.model = model
+            model = resnet_model.unfreeze_top_layers(num_layers=args.unfreeze_layers)
         
-        if validation_steps is None:
-            validation_steps = len(self.val_gen)
-        
-        self.history = self.model.fit(
-            self.train_gen,
-            epochs=epochs,
-            validation_data=self.val_gen,
-            callbacks=callbacks,
-            steps_per_epoch=steps_per_epoch,
-            validation_steps=validation_steps
+        # Create trainer with fine-tuned model
+        trainer = PneumoniaModelTrainer(
+            model=model,
+            train_gen=train_gen,
+            val_gen=val_gen,
+            test_gen=test_gen
         )
         
-        return self.history
+        # Compile with lower learning rate
+        trainer.compile_model(
+            optimizer=Adam(learning_rate=args.lr/10),
+            loss='categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        # Create callbacks for fine-tuned model
+        finetune_model_path = os.path.join(models_dir, "resnet50_finetune.h5")
+        callbacks[0] = ModelCheckpoint(
+            finetune_model_path,
+            monitor='val_accuracy',
+            save_best_only=True,
+            mode='max',
+            verbose=1
+        )
+        
+        # Train fine-tuned model
+        history = trainer.train(
+            epochs=args.epochs,
+            callbacks=callbacks
+        )
+        
+        # Evaluate the model
+        trainer.evaluate()
+        
+        # Plot training history
+        history_plot_path = os.path.join(models_dir, "finetune_model_history.png")
+        trainer.plot_training_history(save_path=history_plot_path)
     
-    def evaluate(self):
-        """
-        Evaluate the model on test data
-        
-        Returns:
-            tuple: (loss, accuracy)
-        """
-        test_loss, test_accuracy = self.model.evaluate(self.test_gen)
-        print(f"Test Loss: {test_loss:.4f}")
-        print(f"Test Accuracy: {test_accuracy:.4f}")
-        
-        return test_loss, test_accuracy
-    
-    def save_model(self, model_path):
-        """
-        Save the model
-        
-        Args:
-            model_path (str): Path to save the model
-        """
-        # Create directory if it doesn't exist
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        self.model.save(model_path)
-        print(f"Model saved to {model_path}")
-    
-    def load_model(self, model_path):
-        """
-        Load a saved model
-        
-        Args:
-            model_path (str): Path to the saved model
-            
-        Returns:
-            tf.keras.Model: Loaded model
-        """
-        self.model = load_model(model_path)
-        return self.model
-    
-    def plot_training_history(self, save_path=None):
-        """
-        Plot training history
-        
-        Args:
-            save_path (str, optional): Path to save the plot
-        """
-        if self.history is None:
-            print("No training history available")
-            return
-        
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-        
-        # Plot accuracy
-        ax1.plot(self.history.history['accuracy'])
-        ax1.plot(self.history.history['val_accuracy'])
-        ax1.set_title('Model Accuracy')
-        ax1.set_ylabel('Accuracy')
-        ax1.set_xlabel('Epoch')
-        ax1.legend(['Train', 'Validation'], loc='lower right')
-        
-        # Plot loss
-        ax2.plot(self.history.history['loss'])
-        ax2.plot(self.history.history['val_loss'])
-        ax2.set_title('Model Loss')
-        ax2.set_ylabel('Loss')
-        ax2.set_xlabel('Epoch')
-        ax2.legend(['Train', 'Validation'], loc='upper right')
-        
-        plt.tight_layout()
-        
-        if save_path:
-            plt.savefig(save_path)
-            
-        plt.show()
+    print("Training completed successfully!")
+    return trainer, model
+
+def main():
+    """Main function to run the script"""
+    args = parse_args()
+    train_model(args)
+
+if __name__ == "__main__":
+    main()
