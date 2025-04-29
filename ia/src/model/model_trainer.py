@@ -6,6 +6,7 @@ from tensorflow.keras.models import load_model
 from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
 import seaborn as sns
 import tensorflow as tf
+from ..visualization.heatmap_generator import GradCAMGenerator
 
 class PneumoniaModelTrainer:
     def __init__(self, model, train_gen, val_gen, test_gen):
@@ -71,10 +72,14 @@ class PneumoniaModelTrainer:
         
         return self.history
     
-    def evaluate(self):
+    def evaluate(self, generate_heatmaps=False, num_heatmap_samples=5):
         """
         Evaluate the model on test data
         
+        Args:
+            generate_heatmaps (bool): Whether to generate heatmaps for sample images
+            num_heatmap_samples (int): Number of sample images to generate heatmaps for
+            
         Returns:
             tuple: (loss, accuracy)
         """
@@ -101,11 +106,108 @@ class PneumoniaModelTrainer:
         plt.title('Confusion Matrix')
         plt.tight_layout()
         
+        # Create models directory if it doesn't exist
+        models_dir = os.path.join(os.path.dirname(__file__), "../../../models")
+        os.makedirs(models_dir, exist_ok=True)
+        
         # Save confusion matrix
-        cm_path = os.path.join(os.path.dirname(__file__), "../../../models", "confusion_matrix.png")
+        cm_path = os.path.join(models_dir, "confusion_matrix.png")
         plt.savefig(cm_path)
         
+        # Generate ROC curve for binary classification
+        if len(target_names) == 2:
+            fpr, tpr, _ = roc_curve(true_classes, predictions[:, 1])
+            roc_auc = auc(fpr, tpr)
+            
+            plt.figure(figsize=(8, 6))
+            plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+            plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+            plt.xlim([0.0, 1.0])
+            plt.ylim([0.0, 1.05])
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.title('Receiver Operating Characteristic')
+            plt.legend(loc="lower right")
+            plt.tight_layout()
+            
+            # Save ROC curve
+            roc_path = os.path.join(models_dir, "roc_curve.png")
+            plt.savefig(roc_path)
+        
+        # Generate heatmaps for sample images if requested
+        if generate_heatmaps:
+            self.generate_sample_heatmaps(num_samples=num_heatmap_samples, target_names=target_names)
+        
         return test_loss, test_accuracy
+    
+    def generate_sample_heatmaps(self, num_samples=5, target_names=None):
+        """
+        Generate heatmaps for sample test images
+        
+        Args:
+            num_samples (int): Number of samples to generate heatmaps for
+            target_names (list): List of class names
+        """
+        print("\nGenerating heatmaps for sample images...")
+        
+        # Create GradCAM generator
+        gradcam_generator = GradCAMGenerator(self.model)
+        
+        # Create directory for heatmaps
+        heatmap_dir = os.path.join(os.path.dirname(__file__), "../../../models/heatmaps")
+        os.makedirs(heatmap_dir, exist_ok=True)
+        
+        # Find the last convolutional layer
+        last_conv_layer = None
+        for layer in reversed(self.model.layers):
+            if 'conv' in layer.name.lower():
+                last_conv_layer = layer.name
+                break
+        
+        # Get sample images from test directory
+        test_dir = self.test_gen.directory
+        
+        # Get class directories
+        class_dirs = [d for d in os.listdir(test_dir) if os.path.isdir(os.path.join(test_dir, d))]
+        
+        samples_per_class = max(1, num_samples // len(class_dirs))
+        total_samples = 0
+        
+        # Process each class directory
+        for class_dir in class_dirs:
+            class_path = os.path.join(test_dir, class_dir)
+            image_files = [f for f in os.listdir(class_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            
+            # Select a sample of images
+            sample_files = image_files[:samples_per_class]
+            
+            # Process each sample image
+            for img_file in sample_files:
+                if total_samples >= num_samples:
+                    break
+                    
+                img_path = os.path.join(class_path, img_file)
+                output_path = os.path.join(heatmap_dir, f"{class_dir}_{img_file.split('.')[0]}_heatmap.png")
+                
+                try:
+                    # Standard preprocessing function for ResNet50
+                    def preprocess_input(x):
+                        return x / 127.5 - 1
+                    
+                    # Generate and save heatmap
+                    gradcam_generator.save_heatmap(
+                        img_path=img_path,
+                        output_path=output_path,
+                        class_names=target_names,
+                        preprocess_input=preprocess_input
+                    )
+                    
+                    total_samples += 1
+                    
+                except Exception as e:
+                    print(f"Error generating heatmap for {img_path}: {e}")
+        
+        print(f"Generated {total_samples} heatmaps in {heatmap_dir}")
     
     def save_model(self, model_path):
         """

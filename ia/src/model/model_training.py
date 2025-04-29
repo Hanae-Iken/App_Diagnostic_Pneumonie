@@ -1,4 +1,3 @@
-# src/model/model_training.py
 import os
 import argparse
 import tensorflow as tf
@@ -10,6 +9,7 @@ import datetime
 from .model_trainer import PneumoniaModelTrainer
 from .resnet50_model import ResNet50Model
 from ..data.data_loader import create_data_generators
+from ..visualization.heatmap_generator import GradCAMGenerator
 
 def parse_args():
     """Parse command line arguments"""
@@ -28,6 +28,10 @@ def parse_args():
                       help='Whether to perform fine-tuning after base training')
     parser.add_argument('--unfreeze_layers', type=int, default=50,
                       help='Number of layers to unfreeze during fine-tuning')
+    parser.add_argument('--generate_heatmaps', action='store_true', default=True,
+                      help='Whether to generate heatmaps after evaluation')
+    parser.add_argument('--num_heatmap_samples', type=int, default=10,
+                      help='Number of sample images to generate heatmaps for')
     return parser.parse_args()
 
 def train_model(args=None):
@@ -121,8 +125,9 @@ def train_model(args=None):
         class_weights=class_weights
     )
     
-    # Evaluate the model
-    trainer.evaluate()
+    # Evaluate the model with heatmap generation if requested
+    trainer.evaluate(generate_heatmaps=args.generate_heatmaps, 
+                    num_heatmap_samples=args.num_heatmap_samples)
     
     # Plot training history
     history_plot_path = os.path.join(models_dir, "base_model_history.png")
@@ -177,14 +182,41 @@ def train_model(args=None):
                 class_weights=class_weights
             )
             
-            # Evaluate the model
-            trainer.evaluate()
+            # Evaluate the model with heatmap generation if requested
+            trainer.evaluate(generate_heatmaps=args.generate_heatmaps, 
+                           num_heatmap_samples=args.num_heatmap_samples)
             
             # Plot training history
             history_plot_path = os.path.join(models_dir, "finetune_model_history.png")
             trainer.plot_training_history(save_path=history_plot_path)
     
         print("Training completed successfully!")
+        
+        # Generate additional heatmaps for final model if requested
+        if args.generate_heatmaps:
+            print("\nGenerating additional heatmaps for final model...")
+            # Create visualization directory if it doesn't exist
+            vis_dir = os.path.join(os.path.dirname(__file__), "../../../visualizations")
+            heatmap_dir = os.path.join(vis_dir, "heatmaps")
+            os.makedirs(heatmap_dir, exist_ok=True)
+            
+            # Get class names
+            target_names = list(test_gen.class_indices.keys())
+            
+            # Create GradCAM generator
+            gradcam_generator = GradCAMGenerator(model)
+            
+            # Generate heatmaps for selected test images
+            gradcam_generator.generate_multiple_heatmaps(
+                img_dir=test_gen.directory,
+                output_dir=heatmap_dir,
+                class_names=target_names,
+                limit=args.num_heatmap_samples,
+                preprocess_input=lambda x: x / 127.5 - 1  # Standard ResNet50 preprocessing
+            )
+            
+            print(f"Additional heatmaps saved to {heatmap_dir}")
+            
     except Exception as e:
         print(f"An error occurred while loading the best model or fine-tuning: {e}")
         # Continue with the current model in memory
