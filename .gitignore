@@ -16,4 +16,7 @@ venv/
 .vscode/
 models/
 ia/data/raw/
+logs/
+models/
+
 

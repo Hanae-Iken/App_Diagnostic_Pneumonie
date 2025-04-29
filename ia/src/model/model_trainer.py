@@ -1,7 +1,10 @@
+# src/model/model_trainer.py
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
+from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
+import seaborn as sns
 
 class PneumoniaModelTrainer:
     def __init__(self, model, train_gen, val_gen, test_gen):
@@ -35,7 +38,7 @@ class PneumoniaModelTrainer:
             metrics=metrics
         )
     
-    def train(self, epochs=10, callbacks=None, steps_per_epoch=None, validation_steps=None):
+    def train(self, epochs=10, callbacks=None, steps_per_epoch=None, validation_steps=None, class_weights=None):
         """
         Train the model
         
@@ -44,6 +47,7 @@ class PneumoniaModelTrainer:
             callbacks (list): List of callbacks
             steps_per_epoch (int): Steps per epoch
             validation_steps (int): Validation steps
+            class_weights (dict): Class weights for imbalanced data
             
         Returns:
             History object containing training metrics
@@ -60,7 +64,8 @@ class PneumoniaModelTrainer:
             validation_data=self.val_gen,
             callbacks=callbacks,
             steps_per_epoch=steps_per_epoch,
-            validation_steps=validation_steps
+            validation_steps=validation_steps,
+            class_weight=class_weights
         )
         
         return self.history
@@ -72,9 +77,32 @@ class PneumoniaModelTrainer:
         Returns:
             tuple: (loss, accuracy)
         """
-        test_loss, test_accuracy = self.model.evaluate(self.test_gen)
+        test_loss, test_accuracy, *other_metrics = self.model.evaluate(self.test_gen)
         print(f"Test Loss: {test_loss:.4f}")
         print(f"Test Accuracy: {test_accuracy:.4f}")
+        
+        # Generate predictions
+        predictions = self.model.predict(self.test_gen)
+        predicted_classes = np.argmax(predictions, axis=1)
+        true_classes = self.test_gen.classes
+        
+        # Print classification report
+        print("\nClassification Report:")
+        target_names = list(self.test_gen.class_indices.keys())
+        print(classification_report(true_classes, predicted_classes, target_names=target_names))
+        
+        # Generate and display confusion matrix
+        cm = confusion_matrix(true_classes, predicted_classes)
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=target_names, yticklabels=target_names)
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.title('Confusion Matrix')
+        plt.tight_layout()
+        
+        # Save confusion matrix
+        cm_path = os.path.join(os.path.dirname(__file__), "../../../models", "confusion_matrix.png")
+        plt.savefig(cm_path)
         
         return test_loss, test_accuracy
     
@@ -100,7 +128,7 @@ class PneumoniaModelTrainer:
         Returns:
             tf.keras.Model: Loaded model
         """
-        self.model = load_model(model_path)
+        self.model = load_model(model_path, compile=True)
         return self.model
     
     def plot_training_history(self, save_path=None):
@@ -114,27 +142,28 @@ class PneumoniaModelTrainer:
             print("No training history available")
             return
         
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+        metrics = [m for m in self.history.history.keys() if not m.startswith('val_')]
+        num_metrics = len(metrics)
+        fig_rows = (num_metrics + 1) // 2  # Calculate rows needed (2 plots per row)
         
-        # Plot accuracy
-        ax1.plot(self.history.history['accuracy'])
-        ax1.plot(self.history.history['val_accuracy'])
-        ax1.set_title('Model Accuracy')
-        ax1.set_ylabel('Accuracy')
-        ax1.set_xlabel('Epoch')
-        ax1.legend(['Train', 'Validation'], loc='lower right')
+        plt.figure(figsize=(15, 5 * fig_rows))
         
-        # Plot loss
-        ax2.plot(self.history.history['loss'])
-        ax2.plot(self.history.history['val_loss'])
-        ax2.set_title('Model Loss')
-        ax2.set_ylabel('Loss')
-        ax2.set_xlabel('Epoch')
-        ax2.legend(['Train', 'Validation'], loc='upper right')
-        
+        for i, metric in enumerate(metrics):
+            plt.subplot(fig_rows, 2, i+1)
+            plt.plot(self.history.history[metric])
+            if f'val_{metric}' in self.history.history:
+                plt.plot(self.history.history[f'val_{metric}'])
+                plt.legend(['Train', 'Validation'], loc='best')
+            else:
+                plt.legend(['Train'], loc='best')
+            plt.title(f'Model {metric.capitalize()}')
+            plt.ylabel(metric.capitalize())
+            plt.xlabel('Epoch')
+            
         plt.tight_layout()
         
         if save_path:
             plt.savefig(save_path)
+            print(f"Training history plots saved to {save_path}")
             
         plt.show()

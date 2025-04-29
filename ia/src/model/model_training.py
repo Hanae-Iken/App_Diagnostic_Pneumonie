@@ -1,8 +1,11 @@
+# src/model/model_training.py
 import os
 import argparse
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, TensorBoard
+from tensorflow.keras.metrics import AUC, Precision, Recall
+import datetime
 
 from .model_trainer import PneumoniaModelTrainer
 from .resnet50_model import ResNet50Model
@@ -13,17 +16,17 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train ResNet50 model for pneumonia detection')
     parser.add_argument('--base_model', type=str, default=None,
                       help='Path to pre-trained model to continue training')
-    parser.add_argument('--batch_size', type=int, default=32,
+    parser.add_argument('--batch_size', type=int, default=16,
                       help='Batch size for training')
     parser.add_argument('--img_size', type=int, default=224,
                       help='Image size for model input')
-    parser.add_argument('--epochs', type=int, default=20,
+    parser.add_argument('--epochs', type=int, default=50,
                       help='Number of epochs for each training phase')
-    parser.add_argument('--lr', type=float, default=1e-4,
+    parser.add_argument('--lr', type=float, default=5e-5,
                       help='Initial learning rate')
-    parser.add_argument('--fine_tune', action='store_true',
+    parser.add_argument('--fine_tune', action='store_true', default=True,
                       help='Whether to perform fine-tuning after base training')
-    parser.add_argument('--unfreeze_layers', type=int, default=15,
+    parser.add_argument('--unfreeze_layers', type=int, default=50,
                       help='Number of layers to unfreeze during fine-tuning')
     return parser.parse_args()
 
@@ -35,12 +38,20 @@ def train_model(args=None):
     print("Starting pneumonia detection model training...")
     print(f"Batch size: {args.batch_size}, Image size: {args.img_size}x{args.img_size}")
     
+    # Enable mixed precision for faster training
+    policy = tf.keras.mixed_precision.Policy('mixed_float16')
+    tf.keras.mixed_precision.set_global_policy(policy)
+    
     # Create models directory if it doesn't exist
     models_dir = os.path.join(os.path.dirname(__file__), "../../../models")
     os.makedirs(models_dir, exist_ok=True)
     
-    # Create data generators
-    train_gen, val_gen, test_gen = create_data_generators(
+    # Create logs directory for TensorBoard
+    log_dir = os.path.join(os.path.dirname(__file__), "../../../logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Create data generators with class weights
+    train_gen, val_gen, test_gen, class_weights = create_data_generators(
         batch_size=args.batch_size, 
         img_size=(args.img_size, args.img_size)
     )
@@ -65,11 +76,11 @@ def train_model(args=None):
         test_gen=test_gen
     )
     
-    # Compile model
+    # Compile model with additional metrics
     trainer.compile_model(
         optimizer=Adam(learning_rate=args.lr),
         loss='categorical_crossentropy',
-        metrics=['accuracy']
+        metrics=['accuracy', AUC(), Precision(), Recall()]
     )
     
     # Create callbacks for base model
@@ -84,24 +95,30 @@ def train_model(args=None):
         ),
         EarlyStopping(
             monitor='val_loss',
-            patience=10,
+            patience=15,
             restore_best_weights=True,
             verbose=1
         ),
         ReduceLROnPlateau(
             monitor='val_loss',
-            factor=0.1,
-            patience=5,
-            min_lr=1e-6,
+            factor=0.2,
+            patience=7,
+            min_lr=1e-7,
             verbose=1
+        ),
+        TensorBoard(
+            log_dir=log_dir,
+            histogram_freq=1,
+            update_freq='epoch'
         )
     ]
     
-    # Train base model
+    # Train base model with class weights
     print("Training base model...")
     history = trainer.train(
         epochs=args.epochs,
-        callbacks=callbacks
+        callbacks=callbacks,
+        class_weights=class_weights
     )
     
     # Evaluate the model
@@ -120,6 +137,10 @@ def train_model(args=None):
         
         # Unfreeze top layers for fine-tuning
         if not args.base_model:  # Only if we started with a new model
+            resnet_model = ResNet50Model(
+                input_shape=(args.img_size, args.img_size, 3),
+                num_classes=len(train_gen.class_indices)
+            )
             resnet_model.model = model
             model = resnet_model.unfreeze_top_layers(num_layers=args.unfreeze_layers)
         
@@ -135,7 +156,7 @@ def train_model(args=None):
         trainer.compile_model(
             optimizer=Adam(learning_rate=args.lr/10),
             loss='categorical_crossentropy',
-            metrics=['accuracy']
+            metrics=['accuracy', AUC(), Precision(), Recall()]
         )
         
         # Create callbacks for fine-tuned model
@@ -148,10 +169,11 @@ def train_model(args=None):
             verbose=1
         )
         
-        # Train fine-tuned model
+        # Train fine-tuned model with class weights
         history = trainer.train(
             epochs=args.epochs,
-            callbacks=callbacks
+            callbacks=callbacks,
+            class_weights=class_weights
         )
         
         # Evaluate the model

@@ -1,11 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout, BatchNormalization
 
 class ResNet50Model:
     """
-    ResNet50 model for pneumonia detection
+    Improved ResNet50 model for pneumonia detection
     """
     
     def __init__(self, input_shape=(224, 224, 3), num_classes=2):
@@ -22,7 +22,7 @@ class ResNet50Model:
     
     def build(self, trainable_base=False):
         """
-        Build the ResNet50 model with custom top layers
+        Build the ResNet50 model with improved top layers
         
         Args:
             trainable_base (bool): Whether to make base model layers trainable
@@ -41,11 +41,23 @@ class ResNet50Model:
         for layer in base_model.layers:
             layer.trainable = trainable_base
         
-        # Add custom top layers
+        # Add improved top layers with BatchNormalization
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
-        x = Dense(512, activation='relu')(x)
+        
+        # First dense block
+        x = Dense(1024, activation=None)(x)
+        x = BatchNormalization()(x)
+        x = tf.keras.activations.relu(x)
         x = Dropout(0.5)(x)
+        
+        # Second dense block
+        x = Dense(512, activation=None)(x)
+        x = BatchNormalization()(x)
+        x = tf.keras.activations.relu(x)
+        x = Dropout(0.3)(x)
+        
+        # Output layer
         predictions = Dense(self.num_classes, activation='softmax')(x)
         
         # Create full model
@@ -53,7 +65,7 @@ class ResNet50Model:
         
         return self.model
     
-    def unfreeze_top_layers(self, num_layers=15):
+    def unfreeze_top_layers(self, num_layers=50):
         """
         Unfreeze top layers of the base model for fine-tuning
         
@@ -63,11 +75,21 @@ class ResNet50Model:
         if self.model is None:
             raise ValueError("Model has not been built yet. Call build() first.")
         
-        # Get the base model (the first layer should be the ResNet50 model)
-        base_model = self.model.layers[0]
-        
-        # Unfreeze the specified number of top layers
-        for layer in base_model.layers[-(num_layers):]:
+        # First, ensure all layers are frozen
+        base_layers = [layer for layer in self.model.layers if not isinstance(layer, tf.keras.Model)]
+        for layer in base_layers:
+            layer.trainable = False
+            
+        # Then unfreeze the top layers of the base model
+        base_model_layers = [layer for layer in self.model.layers if isinstance(layer, tf.keras.Model)]
+        if base_model_layers:
+            base_model = base_model_layers[0]
+            # Unfreeze the specified number of top layers
+            for layer in base_model.layers[-(num_layers):]:
+                layer.trainable = True
+                
+        # Always ensure the custom top layers are trainable
+        for layer in self.model.layers[-7:]:  # Approximately the custom top layers
             layer.trainable = True
         
         return self.model
