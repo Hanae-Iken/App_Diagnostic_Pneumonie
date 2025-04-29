@@ -1,4 +1,3 @@
-#src/data/data_preprocessing.py
 import os
 import cv2
 import numpy as np
@@ -25,9 +24,21 @@ class DataPreprocessor:
         for split in ['train', 'val', 'test']:
             for label in self.labels:
                 os.makedirs(os.path.join(self.processed_data_dir, split, label), exist_ok=True)
+                print(f"Created directory: {os.path.join(self.processed_data_dir, split, label)}")
     
     def preprocess_and_save(self):
         """Preprocess images and save them to the processed directory"""
+        print(f"Starting preprocessing from {self.raw_data_dir} to {self.processed_data_dir}")
+        
+        # Vérifier si le répertoire source existe
+        if not os.path.exists(self.raw_data_dir):
+            print(f"Error: Raw data directory {self.raw_data_dir} does not exist!")
+            return False
+            
+        # Liste les sous-répertoires dans le dossier source pour vérifier la structure
+        raw_subdirs = [f for f in os.listdir(self.raw_data_dir) if os.path.isdir(os.path.join(self.raw_data_dir, f))]
+        print(f"Found subdirectories in raw data: {raw_subdirs}")
+        
         self.create_directory_structure()
         
         for split in ['train', 'val', 'test']:
@@ -36,6 +47,10 @@ class DataPreprocessor:
             if not os.path.exists(split_dir):
                 print(f"Warning: {split_dir} does not exist. Skipping.")
                 continue
+                
+            # Liste les sous-répertoires dans le dossier split pour vérifier les classes
+            split_subdirs = [f for f in os.listdir(split_dir) if os.path.isdir(os.path.join(split_dir, f))]
+            print(f"Found class directories in {split}: {split_subdirs}")
                 
             for label in self.labels:
                 label_dir = os.path.join(split_dir, label)
@@ -48,6 +63,8 @@ class DataPreprocessor:
                 
                 # Process all images in the directory
                 img_files = os.listdir(label_dir)
+                print(f"Found {len(img_files)} images in {label_dir}")
+                
                 for img_file in tqdm(img_files, desc=f"Processing {split}/{label}"):
                     try:
                         img_path = os.path.join(label_dir, img_file)
@@ -57,6 +74,7 @@ class DataPreprocessor:
                         # Read and preprocess image
                         img = cv2.imread(img_path)
                         if img is None:
+                            print(f"Warning: Could not read {img_path}")
                             continue
                             
                         # Apply preprocessing
@@ -68,6 +86,25 @@ class DataPreprocessor:
                     
                     except Exception as e:
                         print(f"Error processing {img_file}: {e}")
+                        
+        # Vérification finale des résultats du prétraitement
+        processed_counts = {}
+        for split in ['train', 'val', 'test']:
+            processed_counts[split] = {}
+            for label in self.labels:
+                dir_path = os.path.join(self.processed_data_dir, split, label)
+                if os.path.exists(dir_path):
+                    file_count = len([f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))])
+                    processed_counts[split][label] = file_count
+                else:
+                    processed_counts[split][label] = 0
+                    
+        print("\nPreprocessing summary:")
+        for split, labels in processed_counts.items():
+            for label, count in labels.items():
+                print(f"{split}/{label}: {count} images")
+                
+        return True
     
     def _preprocess_image(self, img):
         """
@@ -80,19 +117,22 @@ class DataPreprocessor:
             numpy.ndarray: Preprocessed image
         """
         # Convert to grayscale
-        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
         # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
-        # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        # clahe_img = clahe.apply(gray)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe_img = clahe.apply(gray)
         
         # Resize to target size
-        resized = cv2.resize(img, (self.img_size, self.img_size))
+        resized = cv2.resize(clahe_img, (self.img_size, self.img_size))
         
-        # Optional: Normalize pixel values to [0, 255]
-        # normalized = cv2.normalize(resized, None, 0, 255, cv2.NORM_MINMAX)
+        # Normalize pixel values to [0, 255]
+        normalized = cv2.normalize(resized, None, 0, 255, cv2.NORM_MINMAX)
         
-        return resized
+        # Convert back to 3 channels for compatibility with models expecting RGB
+        img_3channels = cv2.cvtColor(normalized, cv2.COLOR_GRAY2RGB)
+        
+        return img_3channels
     
     def balance_classes(self, max_samples_per_class=None):
         """

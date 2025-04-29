@@ -1,2 +1,2 @@
-from .resnet50_model import ResNet50Model
-from .model_trainer import PneumoniaModelTrainer
+# from .resnet50_model import ResNet50Model
+# from .model_trainer import PneumoniaModelTrainer

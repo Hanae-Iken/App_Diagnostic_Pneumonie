@@ -19,5 +19,6 @@ ia/data/raw/
 logs/
 models/
 visualizations/
-
+data/
+ia/models
 

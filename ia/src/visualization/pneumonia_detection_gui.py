@@ -26,6 +26,7 @@ class PneumoniaDetectionGUI:
         
         # Load model
         try:
+            # Chargement du modèle avec custom_objects si nécessaire
             self.model = load_model(model_path)
             print(f"Model loaded successfully from {model_path}")
         except Exception as e:
@@ -178,19 +179,29 @@ class PneumoniaDetectionGUI:
         # Read image
         img = cv2.imread(img_path)
         
-        # Convert to RGB (from BGR)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # Convert to grayscale (pour correspondre au prétraitement du modèle)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe_img = clahe.apply(gray)
         
         # Resize to the expected size
-        img = cv2.resize(img, (self.img_size, self.img_size))
+        resized = cv2.resize(clahe_img, (self.img_size, self.img_size))
         
-        # Normalize
-        img = img / 255.0
+        # Normalize to [0, 255]
+        normalized = cv2.normalize(resized, None, 0, 255, cv2.NORM_MINMAX)
+        
+        # Convert back to 3 channels for compatibility with the model
+        img_3channels = cv2.cvtColor(normalized, cv2.COLOR_GRAY2RGB)
+        
+        # Normalize pixel values to [-1, 1] as dans data_loader.py
+        img_3channels = img_3channels / 127.5 - 1
         
         # Add batch dimension
-        img = np.expand_dims(img, axis=0)
+        img_3channels = np.expand_dims(img_3channels, axis=0)
         
-        return img
+        return img_3channels
     
     def predict(self):
         """Make prediction on the loaded image"""
@@ -231,14 +242,30 @@ class PneumoniaDetectionGUI:
             self.status_var.set("Prediction failed")
 
 def main():
-    # Find model path
+    # Trouver les chemins du projet
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
-    model_path = os.path.join(project_root, "models", "resnet50_base.keras")
+    ia_root = os.path.dirname(os.path.dirname(current_dir))  # Racine du dossier ia/
     
-    if not os.path.exists(model_path):
-        print(f"Model not found at {model_path}")
+    # Chemins possibles du modèle
+    model_paths = [
+        os.path.join(ia_root, "models", "pneumonia_model_best.h5"),  # Le modèle entraîné
+        os.path.join(project_root, "models", "pneumonia_model_best.h5"),  # Alternative
+        # os.path.join(ia_root, "models", "resnet50_base.h5")  # Modèle de base si le premier n'existe pas
+    ]
+    
+    # Trouver le premier modèle qui existe
+    model_path = None
+    for path in model_paths:
+        if os.path.exists(path):
+            model_path = path
+            break
+    
+    if not model_path:
+        print("No model found. Please train the model first using preprocess_and_train.py")
         sys.exit(1)
+    
+    print(f"Using model: {model_path}")
     
     # Create Tkinter root
     root = tk.Tk()
