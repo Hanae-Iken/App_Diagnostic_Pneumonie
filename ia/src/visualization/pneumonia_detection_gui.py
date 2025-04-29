@@ -234,7 +234,7 @@ def main():
     # Find model path
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
-    model_path = os.path.join(project_root, "models", "resnet50_base.h5")
+    model_path = os.path.join(project_root, "models", "resnet50_base.keras")
     
     if not os.path.exists(model_path):
         print(f"Model not found at {model_path}")

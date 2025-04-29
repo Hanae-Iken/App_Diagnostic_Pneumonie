@@ -20,11 +20,11 @@ def parse_args():
                       help='Batch size for training')
     parser.add_argument('--img_size', type=int, default=224,
                       help='Image size for model input')
-    parser.add_argument('--epochs', type=int, default=50,
+    parser.add_argument('--epochs', type=int, default=5, # Reduced from 50 to 5 for testing
                       help='Number of epochs for each training phase')
     parser.add_argument('--lr', type=float, default=5e-5,
                       help='Initial learning rate')
-    parser.add_argument('--fine_tune', action='store_true', default=True,
+    parser.add_argument('--fine_tune', action='store_true', default=False, # Changed to False for initial testing
                       help='Whether to perform fine-tuning after base training')
     parser.add_argument('--unfreeze_layers', type=int, default=50,
                       help='Number of layers to unfreeze during fine-tuning')
@@ -38,9 +38,9 @@ def train_model(args=None):
     print("Starting pneumonia detection model training...")
     print(f"Batch size: {args.batch_size}, Image size: {args.img_size}x{args.img_size}")
     
-    # Enable mixed precision for faster training
-    policy = tf.keras.mixed_precision.Policy('mixed_float16')
-    tf.keras.mixed_precision.set_global_policy(policy)
+    # Disable mixed precision to avoid Cast layer issues
+    # policy = tf.keras.mixed_precision.Policy('mixed_float16')
+    # tf.keras.mixed_precision.set_global_policy(policy)
     
     # Create models directory if it doesn't exist
     models_dir = os.path.join(os.path.dirname(__file__), "../../../models")
@@ -84,7 +84,7 @@ def train_model(args=None):
     )
     
     # Create callbacks for base model
-    base_model_path = os.path.join(models_dir, "resnet50_base.h5")
+    base_model_path = os.path.join(models_dir, "resnet50_base.keras")
     callbacks = [
         ModelCheckpoint(
             base_model_path,
@@ -95,14 +95,14 @@ def train_model(args=None):
         ),
         EarlyStopping(
             monitor='val_loss',
-            patience=15,
+            patience=5,  # Reduced from 15 to 5 for faster testing
             restore_best_weights=True,
             verbose=1
         ),
         ReduceLROnPlateau(
             monitor='val_loss',
             factor=0.2,
-            patience=7,
+            patience=3,  # Reduced from 7 to 3 for faster testing
             min_lr=1e-7,
             verbose=1
         ),
@@ -129,61 +129,67 @@ def train_model(args=None):
     trainer.plot_training_history(save_path=history_plot_path)
     
     # Load the best model
-    model = trainer.load_model(base_model_path)
-    
-    # Fine-tune if requested
-    if args.fine_tune:
-        print(f"Fine-tuning model by unfreezing {args.unfreeze_layers} layers...")
+    try:
+        model = trainer.load_model(base_model_path)
         
-        # Unfreeze top layers for fine-tuning
-        if not args.base_model:  # Only if we started with a new model
-            resnet_model = ResNet50Model(
-                input_shape=(args.img_size, args.img_size, 3),
-                num_classes=len(train_gen.class_indices)
+        # Fine-tune if requested
+        if args.fine_tune:
+            print(f"Fine-tuning model by unfreezing {args.unfreeze_layers} layers...")
+            
+            # Unfreeze top layers for fine-tuning
+            if not args.base_model:  # Only if we started with a new model
+                resnet_model = ResNet50Model(
+                    input_shape=(args.img_size, args.img_size, 3),
+                    num_classes=len(train_gen.class_indices)
+                )
+                resnet_model.model = model
+                model = resnet_model.unfreeze_top_layers(num_layers=args.unfreeze_layers)
+            
+            # Create trainer with fine-tuned model
+            trainer = PneumoniaModelTrainer(
+                model=model,
+                train_gen=train_gen,
+                val_gen=val_gen,
+                test_gen=test_gen
             )
-            resnet_model.model = model
-            model = resnet_model.unfreeze_top_layers(num_layers=args.unfreeze_layers)
-        
-        # Create trainer with fine-tuned model
-        trainer = PneumoniaModelTrainer(
-            model=model,
-            train_gen=train_gen,
-            val_gen=val_gen,
-            test_gen=test_gen
-        )
-        
-        # Compile with lower learning rate
-        trainer.compile_model(
-            optimizer=Adam(learning_rate=args.lr/10),
-            loss='categorical_crossentropy',
-            metrics=['accuracy', AUC(), Precision(), Recall()]
-        )
-        
-        # Create callbacks for fine-tuned model
-        finetune_model_path = os.path.join(models_dir, "resnet50_finetune.h5")
-        callbacks[0] = ModelCheckpoint(
-            finetune_model_path,
-            monitor='val_accuracy',
-            save_best_only=True,
-            mode='max',
-            verbose=1
-        )
-        
-        # Train fine-tuned model with class weights
-        history = trainer.train(
-            epochs=args.epochs,
-            callbacks=callbacks,
-            class_weights=class_weights
-        )
-        
-        # Evaluate the model
-        trainer.evaluate()
-        
-        # Plot training history
-        history_plot_path = os.path.join(models_dir, "finetune_model_history.png")
-        trainer.plot_training_history(save_path=history_plot_path)
+            
+            # Compile with lower learning rate
+            trainer.compile_model(
+                optimizer=Adam(learning_rate=args.lr/10),
+                loss='categorical_crossentropy',
+                metrics=['accuracy', AUC(), Precision(), Recall()]
+            )
+            
+            # Create callbacks for fine-tuned model
+            finetune_model_path = os.path.join(models_dir, "resnet50_finetune.keras")
+            callbacks[0] = ModelCheckpoint(
+                finetune_model_path,
+                monitor='val_accuracy',
+                save_best_only=True,
+                mode='max',
+                verbose=1
+            )
+            
+            # Train fine-tuned model with class weights
+            history = trainer.train(
+                epochs=args.epochs,
+                callbacks=callbacks,
+                class_weights=class_weights
+            )
+            
+            # Evaluate the model
+            trainer.evaluate()
+            
+            # Plot training history
+            history_plot_path = os.path.join(models_dir, "finetune_model_history.png")
+            trainer.plot_training_history(save_path=history_plot_path)
     
-    print("Training completed successfully!")
+        print("Training completed successfully!")
+    except Exception as e:
+        print(f"An error occurred while loading the best model or fine-tuning: {e}")
+        # Continue with the current model in memory
+        print("Continuing with the current model...")
+    
     return trainer, model
 
 def main():

@@ -48,13 +48,13 @@ class ResNet50Model:
         # First dense block
         x = Dense(1024, activation=None)(x)
         x = BatchNormalization()(x)
-        x = tf.keras.activations.relu(x)
+        x = tf.keras.layers.Activation('relu')(x)  # Use Activation layer instead of direct activation
         x = Dropout(0.5)(x)
         
         # Second dense block
         x = Dense(512, activation=None)(x)
         x = BatchNormalization()(x)
-        x = tf.keras.activations.relu(x)
+        x = tf.keras.layers.Activation('relu')(x)  # Use Activation layer instead of direct activation
         x = Dropout(0.3)(x)
         
         # Output layer
@@ -113,7 +113,11 @@ class ResNet50Model:
         if self.model is None:
             raise ValueError("Model has not been built yet. Call build() first.")
         
-        self.model.save(path)
+        # Change file extension to .keras if it's .h5
+        if path.endswith('.h5'):
+            path = path.replace('.h5', '.keras')
+            
+        self.model.save(path, save_format='keras')
         print(f"Model saved to {path}")
     
     def load(self, path):
@@ -123,5 +127,11 @@ class ResNet50Model:
         Args:
             path (str): Path to the saved model
         """
+        # Change file extension to .keras if it's .h5
+        if path.endswith('.h5'):
+            keras_path = path.replace('.h5', '.keras')
+            if os.path.exists(keras_path):
+                path = keras_path
+        
         self.model = tf.keras.models.load_model(path)
         return self.model

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
 import seaborn as sns
+import tensorflow as tf
 
 class PneumoniaModelTrainer:
     def __init__(self, model, train_gen, val_gen, test_gen):
@@ -113,9 +114,15 @@ class PneumoniaModelTrainer:
         Args:
             model_path (str): Path to save the model
         """
+        # Change file extension to .keras if it's .h5
+        if model_path.endswith('.h5'):
+            model_path = model_path.replace('.h5', '.keras')
+            
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        self.model.save(model_path)
+        
+        # Save with the keras format
+        self.model.save(model_path, save_format='keras')
         print(f"Model saved to {model_path}")
     
     def load_model(self, model_path):
@@ -128,8 +135,25 @@ class PneumoniaModelTrainer:
         Returns:
             tf.keras.Model: Loaded model
         """
-        self.model = load_model(model_path, compile=True)
-        return self.model
+        # Change file extension to .keras if it's .h5
+        if model_path.endswith('.h5'):
+            keras_path = model_path.replace('.h5', '.keras')
+            if os.path.exists(keras_path):
+                model_path = keras_path
+        
+        # Add custom objects if needed
+        custom_objects = {}
+        
+        # Load the model
+        try:
+            self.model = tf.keras.models.load_model(model_path, custom_objects=custom_objects)
+            return self.model
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            print("Trying alternative loading method...")
+            # Alternative loading method for compatibility
+            self.model = tf.keras.models.load_model(model_path, compile=False)
+            return self.model
     
     def plot_training_history(self, save_path=None):
         """
@@ -163,6 +187,9 @@ class PneumoniaModelTrainer:
         plt.tight_layout()
         
         if save_path:
+            # Change file extension to .png if it's not already
+            if not save_path.endswith('.png'):
+                save_path = save_path + '.png'
             plt.savefig(save_path)
             print(f"Training history plots saved to {save_path}")
             
