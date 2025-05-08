@@ -1,88 +1,147 @@
 .App {
-    text-align: center;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #f5f5f5;
-  }
-  
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+}
+
+.signup-container {
+  display: flex;
+  width: 90%;
+  max-width: 1000px;
+  padding: 2rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+}
+
+.signup-image-container {
+  flex: 1;
+  min-width: 500px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.signup-image {
+  width: 918px; /* ou n'importe quelle valeur : 100%, 50%, 300px, etc. */
+  height: 1030px; /* pour garder les proportions */
+  border-radius: 1000px;
+  box-shadow: 200px 400px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  border-radius: 0%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.signup-content {
+  flex: 1;
+  min-width: 400px;
+  padding: 1rem;
+}
+
+.welcome-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcome-header h1 {
+  font-size: 2.5rem;
+  color: #395185;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-header h2 {
+  font-size: 2rem;
+  color: #395185;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-header h3 {
+  font-size: 2rem;
+  color: #395185;
+  margin-bottom: 1rem;
+}
+
+.signup-form {
+  text-align: left;
+}
+
+.signup-form h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #000000;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #92BAEF;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.signup-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #92BAEF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.3s;
+}
+
+.signup-btn:hover {
+  background-color: #92BAEF;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #000000;
+}
+
+.login-link a {
+  color: #92BAEF;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+  color: #92BAEF;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
   .signup-container {
-    width: 100%;
-    max-width: 500px;
-    padding: 2rem;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
   }
   
-  .welcome-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-  }
-  
-  .welcome-header h2 {
-    font-size: 2rem;
-    color: #444;
-    margin-bottom: 0.5rem;
-  }
-  
-  .welcome-header h3 {
-    font-size: 1.5rem;
-    color: #555;
+  .signup-image-container {
     margin-bottom: 2rem;
   }
-  
-  .signup-form {
-    text-align: left;
-  }
-  
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-  
-  .form-group input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-  }
-  
-  .signup-btn {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    margin-top: 1rem;
-  }
-  
-  .signup-btn:hover {
-    background-color: #45a049;
-  }
-  
-  .login-link {
-    text-align: center;
-    margin-top: 1.5rem;
-    color: #666;
-  }
-  
-  .login-link a {
-    color: #4CAF50;
-    text-decoration: none;
-  }
-  
-  .login-link a:hover {
-    text-decoration: underline;
-  }
+}
