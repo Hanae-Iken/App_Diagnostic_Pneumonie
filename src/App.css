@@ -27,8 +27,8 @@
 }
 
 .signup-image {
-  width: 918px; /* ou n'importe quelle valeur : 100%, 50%, 300px, etc. */
-  height: 1030px; /* pour garder les proportions */
+  width: 918px;
+  height: 1030px;
   border-radius: 1000px;
   box-shadow: 200px 400px rgba(0, 0, 0, 0.1);
   max-width: 100%;
@@ -135,7 +135,7 @@
   color: #92BAEF;
 }
 
-/* Responsive design */
+// Responsive design 
 @media (max-width: 768px) {
   .signup-container {
     flex-direction: column;
@@ -144,4 +144,8 @@
   .signup-image-container {
     margin-bottom: 2rem;
   }
+}
+.App {
+  min-height: 100vh;
+  background-color: #f5f9ff;
 }
