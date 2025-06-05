@@ -1,19 +1,17 @@
-import ReactDOM from 'react-dom/client';
-
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import './index.css';
+import ReactDOM from 'react-dom/client';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
-import './index.css';
-// Nouvelle méthode pour React 18+
+import './ESPmedc/MEDC.css';
 
+// Vérification que l'élément root existe avant le rendu
+const rootElement = document.getElementById('root');
 
-// Si vous voulez mesurer les performances dans votre app, passez une fonction
-// pour logger les résultats (par exemple: reportWebVitals(console.log))
-// ou envoyez-les à un point d'analytique. Apprenez-en plus: https://bit.ly/CRA-vitals
+if (!rootElement) {
+  throw new Error("L'élément avec l'ID 'root' est introuvable dans index.html");
+}
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(rootElement);
+
 root.render(
   <React.StrictMode>
     <App />

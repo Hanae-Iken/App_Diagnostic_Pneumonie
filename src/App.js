@@ -1,11 +1,10 @@
 import React from 'react';
-import './App.css';
-import MEDC from './ESPmedc/MEDC';
+import MEDC from './ESPmedc/MEDC';  // <-- Problème probable ici
 
 function App() {
   return (
-    <div className="App">
-      <MEDC />
+    <div className="app">
+      <MEDC />  {/* L'erreur pointe vers ce rendu */}
     </div>
   );
 }
