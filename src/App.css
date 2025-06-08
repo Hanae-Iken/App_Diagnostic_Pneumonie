@@ -3,3 +3,9 @@
   width: 100%;
   min-height: 100vh;
 }
+
+/* Style global pour les boutons */
+button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
