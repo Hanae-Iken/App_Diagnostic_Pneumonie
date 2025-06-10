@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { FiUpload, FiX, FiChevronDown } from 'react-icons/fi';
 import './NOVANALY.css';
 
 const NOVANALY = () => {
@@ -9,11 +10,18 @@ const NOVANALY = () => {
     symptomes: ''
   });
   const [image, setImage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImage(e.target.files[0]);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Données soumises:', { patient, image });
-    // Ajoutez ici la logique de soumission
+    console.log('Analyse soumise:', { patient, image });
+    // Ici vous ajouterez la logique de soumission
   };
 
   return (
@@ -42,20 +50,26 @@ const NOVANALY = () => {
                 value={patient.age}
                 onChange={(e) => setPatient({...patient, age: e.target.value})}
                 required
+                min="1"
+                max="120"
               />
             </div>
             
             <div className="form-group">
               <label>Sexe</label>
-              <select
-                value={patient.sexe}
-                onChange={(e) => setPatient({...patient, sexe: e.target.value})}
-                required
-              >
-                <option value="">Sélectionner</option>
-                <option value="M">Masculin</option>
-                <option value="F">Féminin</option>
-              </select>
+              <div className="custom-select">
+                <select
+                  value={patient.sexe}
+                  onChange={(e) => setPatient({...patient, sexe: e.target.value})}
+                  required
+                >
+                  <option value="">Sélectionner</option>
+                  <option value="M">Masculin</option>
+                  <option value="F">Féminin</option>
+                  <option value="O">Autre</option>
+                </select>
+                <FiChevronDown className="select-arrow" />
+              </div>
             </div>
           </div>
 
@@ -65,6 +79,7 @@ const NOVANALY = () => {
               value={patient.symptomes}
               onChange={(e) => setPatient({...patient, symptomes: e.target.value})}
               required
+              placeholder="Décrivez les symptômes observés..."
             />
           </div>
         </div>
@@ -72,39 +87,49 @@ const NOVANALY = () => {
         <div className="form-section">
           <h2>Imagerie médicale</h2>
           
-          <div className="upload-area">
+          <div className="upload-container">
             {image ? (
-              <div className="image-preview">
-                <img src={URL.createObjectURL(image)} alt="Preview" />
-                <button
-                  type="button"
-                  onClick={() => setImage(null)}
-                  className="remove-btn"
-                >
-                  Supprimer
-                </button>
+              <div className="image-preview-container">
+                <div className="image-preview">
+                  <img src={URL.createObjectURL(image)} alt="Preview" />
+                  <button
+                    type="button"
+                    onClick={() => setImage(null)}
+                    className="remove-image"
+                  >
+                    <FiX size={20} />
+                  </button>
+                </div>
+                <div className="image-info">
+                  <p>{image.name}</p>
+                  <span>{(image.size / 1024).toFixed(2)} KB</span>
+                </div>
               </div>
             ) : (
-              <>
+              <div 
+                className="upload-area"
+                onClick={() => fileInputRef.current.click()}
+              >
                 <input
                   type="file"
-                  id="image-upload"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
                   accept="image/*,.dcm"
-                  onChange={(e) => setImage(e.target.files[0])}
                   hidden
                 />
-                <label htmlFor="image-upload" className="upload-label">
-                  <span>+</span>
-                  <p>Glissez-déposez une image ou cliquez pour sélectionner</p>
-                  <small>Formats acceptés: JPG, PNG, DICOM</small>
-                </label>
-              </>
+                <FiUpload size={40} className="upload-icon" />
+                <p>Glissez-déposez une image ou <span>browsez</span></p>
+                <small>Formats supportés: JPG, PNG, DICOM</small>
+              </div>
             )}
           </div>
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="submit-btn">
+          <button type="button" className="secondary-btn">
+            Annuler
+          </button>
+          <button type="submit" className="primary-btn" disabled={!image}>
             Lancer l'analyse
           </button>
         </div>
