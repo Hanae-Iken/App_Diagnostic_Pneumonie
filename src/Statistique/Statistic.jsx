@@ -18,6 +18,7 @@ const Statistic = () => {
   };
 
   return (
+   <div className="full-page">
     <div className="statistics-container">
       <div className="statistics-header">
         <h1>Statistiques médicales</h1>
@@ -126,6 +127,7 @@ const Statistic = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

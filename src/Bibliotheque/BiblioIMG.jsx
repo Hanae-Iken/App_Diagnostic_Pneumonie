@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { FiSearch, FiFilter, FiDownload, FiEye } from 'react-icons/fi';
 import './BiblioIMG.css';
 
-const BiblioIMG = () => {
+const ImageLibrary = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   
   const cases = [
-    { id: 1, patient: 'Mohammed', date: '15/05/2023', type: 'RX Thorax', result: 'positive', image: 'case1.jpg' },
-    { id: 2, patient: 'Fatima', date: '10/05/2023', type: 'CT Scan', result: 'negative', image: 'case2.jpg' },
-    { id: 3, patient: 'Karim', date: '05/05/2023', type: 'RX Thorax', result: 'positive', image: 'case3.jpg' },
-    { id: 4, patient: 'Leila', date: '28/04/2023', type: 'IRM', result: 'negative', image: 'case4.jpg' },
-    { id: 5, patient: 'Youssef', date: '22/04/2023', type: 'RX Thorax', result: 'positive', image: 'case5.jpg' },
-    { id: 6, patient: 'Amina', date: '18/04/2023', type: 'CT Scan', result: 'negative', image: 'case6.jpg' }
+    { id: 1, patient: 'Mohammed Alami', date: '15/05/2023', type: 'RX Thorax', result: 'positive', image: 'case1.jpg' },
+    { id: 2, patient: 'Fatima Zahra', date: '10/05/2023', type: 'CT Scan', result: 'negative', image: 'case2.jpg' },
+    { id: 3, patient: 'Karim Benzema', date: '05/05/2023', type: 'RX Thorax', result: 'positive', image: 'case3.jpg' },
+    { id: 4, patient: 'Leila Marrakchi', date: '28/04/2023', type: 'IRM', result: 'negative', image: 'case4.jpg' },
+    { id: 5, patient: 'Youssef Nouri', date: '22/04/2023', type: 'RX Thorax', result: 'positive', image: 'case5.jpg' },
+    { id: 6, patient: 'Amina Belhaj', date: '18/04/2023', type: 'CT Scan', result: 'negative', image: 'case6.jpg' }
   ];
 
   const filteredCases = cases.filter(caseItem => {
@@ -23,8 +23,8 @@ const BiblioIMG = () => {
   });
 
   return (
-    <div className="library">
-      <div className="library-header">
+    <div className="image-library-page">
+      <div className="page-header">
         <h1>Bibliothèque d'images</h1>
         <div className="library-controls">
           <div className="search-box">
@@ -84,4 +84,4 @@ const BiblioIMG = () => {
   );
 };
 
-export default BiblioIMG;
+export default ImageLibrary;

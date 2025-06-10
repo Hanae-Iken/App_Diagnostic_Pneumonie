@@ -5,9 +5,9 @@ import './Parametr.css';
 const Parametr = () => {
   const [settings, setSettings] = useState({
     profile: {
-      nom: 'Dr. Ahmed Berrada',
+      nom: 'Dr.  Mohamed Berrada',
       specialite: 'Radiologue',
-      email: 'ahmed.berrada@hopital.com',
+      email: 'm.berrada@uae.ac.ma',
       telephone: '+212 6 12 34 56 78'
     },
     preferences: {

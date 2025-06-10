@@ -8,7 +8,6 @@ import Patients from './MesPatients/MesPats';
 import History from './Historique/Historic';
 import Statistics from './Statistique/Statistic';
 import Settings from './Parametres/Parametr';
-import './App.css';
 
 function App() {
   return (
@@ -16,12 +15,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="nouvelle-analyse" element={<NewAnalysis />} />
-          <Route path="bibliotheque" element={<ImageLibrary />} />
+          <Route path="new-analysis" element={<NewAnalysis />} />
+          <Route path="image-library" element={<ImageLibrary />} />
           <Route path="patients" element={<Patients />} />
-          <Route path="historique" element={<History />} />
-          <Route path="statistiques" element={<Statistics />} />
-          <Route path="parametres" element={<Settings />} />
+          <Route path="history" element={<History />} />
+          <Route path="statistics" element={<Statistics />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

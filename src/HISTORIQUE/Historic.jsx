@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FiSearch, FiCalendar, FiChevronDown } from 'react-icons/fi';
+import { FiCalendar, FiChevronDown } from 'react-icons/fi';
 import './Historic.css';
 
 const Historic = () => {
   const [timeFilter, setTimeFilter] = useState('week');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
 
   const historyItems = [
     { id: 1, patient: 'Mohammed Alami', date: '15/05/2023 09:30', action: 'Diagnostic', type: 'RX Thorax', result: 'Positif' },
@@ -25,13 +25,7 @@ const Historic = () => {
         <h1>Historique des consultations</h1>
         <div className="history-filters">
           <div className="search-box">
-            <FiSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Rechercher par patient ou action..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+           
           </div>
           <div className="time-filter">
             <FiCalendar className="calendar-icon" />

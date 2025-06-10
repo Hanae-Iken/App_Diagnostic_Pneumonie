@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { FiUpload, FiX, FiChevronDown } from 'react-icons/fi';
 import './NOVANALY.css';
 
-const NOVANALY = () => {
+const NewAnalysis = () => {
   const [patient, setPatient] = useState({
     nom: '',
     age: '',
@@ -12,22 +12,24 @@ const NOVANALY = () => {
   const [image, setImage] = useState(null);
   const fileInputRef = useRef(null);
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Analyse soumise:', { patient, image });
+    // Logique de soumission ici
+  };
+
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Analyse soumise:', { patient, image });
-    // Ici vous ajouterez la logique de soumission
-  };
-
   return (
-    <div className="new-analysis">
-      <h1>Nouvelle analyse</h1>
-      
+    <div className="new-analysis-page">
+      <div className="page-header">
+        <h1>Nouvelle analyse</h1>
+      </div>
+
       <form onSubmit={handleSubmit}>
         <div className="form-section">
           <h2>Informations patient</h2>
@@ -66,7 +68,6 @@ const NOVANALY = () => {
                   <option value="">Sélectionner</option>
                   <option value="M">Masculin</option>
                   <option value="F">Féminin</option>
-                  <option value="O">Autre</option>
                 </select>
                 <FiChevronDown className="select-arrow" />
               </div>
@@ -118,7 +119,7 @@ const NOVANALY = () => {
                   hidden
                 />
                 <FiUpload size={40} className="upload-icon" />
-                <p>Glissez-déposez une image ou <span>browsez</span></p>
+                <p>Glissez-déposez une image ou <span>parcourir</span></p>
                 <small>Formats supportés: JPG, PNG, DICOM</small>
               </div>
             )}
@@ -138,4 +139,4 @@ const NOVANALY = () => {
   );
 };
 
-export default NOVANALY;
+export default NewAnalysis;
