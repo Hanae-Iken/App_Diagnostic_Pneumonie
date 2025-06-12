@@ -1,0 +1,48 @@
+.feedback-section {
+  background-color: #f7f7f7;
+  padding: 60px 40px;
+  text-align: center;
+}
+
+.feedback-title {
+  font-size: 32px;
+  color: #0D1B2A; /* Bleu marine foncé */
+  margin-bottom: 40px;
+}
+
+.feedback-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.feedback-card {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  width: 260px;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quote {
+  font-size: 32px;
+  color: #FF9800;
+  position: absolute;
+  top: 10px;
+  left: 20px;
+}
+
+.feedback-text {
+  font-size: 16px;
+  color: #333;
+  margin-top: 40px;
+  min-height: 120px;
+}
+
+.feedback-author {
+  margin-top: 20px;
+  font-weight: bold;
+  color: #555;
+}

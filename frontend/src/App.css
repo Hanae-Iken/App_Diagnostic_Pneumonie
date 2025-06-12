@@ -1,0 +1,194 @@
+/* App.css */
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Header - barre de navigation */
+.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 70px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+/* Partie gauche - logo */
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Liens de navigation */
+.nav-links {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: #007BFF;
+}
+
+/* Boutons Sign In / Sign Up */
+.auth-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-outline {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #007BFF;
+  color: #007BFF;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-outline:hover {
+  background-color: #007BFF;
+  color: white;
+}
+
+.btn-filled {
+  padding: 8px 16px;
+  background: #007BFF;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-filled:hover {
+  background-color: #0056b3;
+}
+
+/* Pour éviter que le contenu passe sous le header */
+main {
+  margin-top: 80px;
+  padding: 20px;
+}
+/* App.css */
+.App {
+  font-family: Arial, sans-serif;
+  scroll-behavior: smooth;
+}
+
+.App > div {
+  min-height: 100vh; /* Chaque section prend toute la hauteur de l'écran */
+  padding: 60px 20px;
+}
+.signin-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-color: #f0f8ff;
+}
+
+.top-right-link {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+}
+
+.forgot-password-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
+
+.signin-box {
+  background-color: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 51, 102, 0.2);
+  text-align: center;
+}
+
+.input-field {
+  display: block;
+  width: 250px;
+  padding: 12px;
+  margin: 15px auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+.signin-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-color: #f8f9fa;
+}
+
+.signin-top-right {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+}
+
+.signin-forgot {
+  color: #007bff;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.signin-forgot:hover {
+  text-decoration: underline;
+}
+
+.signin-box {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.input-field {
+  width: 250px;
+  padding: 12px;
+  margin: 15px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+
+
+
+
+

@@ -1,0 +1,100 @@
+.signin-container {
+  height: 100vh;
+  background-image: url('../assets/back.jpg');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signin-form {
+  background-color: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.signin-form h2 {
+  margin-bottom: 20px;
+  color: #004080;
+  text-align: center;
+}
+
+.signin-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.signin-form input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.forgot-password a {
+  font-size: 0.9rem;
+  color: #007BFF;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+.signin-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.signin-button:hover {
+  background-color: #0056b3;
+}
+
+.signup-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.95rem;
+}
+
+.signup-link button {
+  background: none;
+  border: none;
+  color: #007BFF;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.signup-link button:hover {
+  text-decoration: underline;
+}
+.link-button {
+  background: none;
+  border: none;
+  color: #007BFF;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+.link-button:hover {
+  color: #0056b3;
+}
+
