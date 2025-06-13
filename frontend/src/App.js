@@ -1,5 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './Nouvel_diagno/Layout';
+import Dashboard from './ESPmedc/MEDC';
+import NewAnalysis from './Nouvel_diagno/NOVANALY';
+import ImageLibrary from './Bibliotheque/BiblioIMG';
+import Patients from './MesPatients/MesPats';
+import History from './HISTORIQUE/Historic';
+import Statistics from './Statistique/Statistic';
+import Settings from './Parametres/Parametr';
 
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -24,28 +32,50 @@ function HomePage() {
       <div id="fonctionnement"><Fonctionnement /></div>
       <div id="feedbacks"><Feedbacks /></div>
       <div id="contact"><Contact /></div>
+      <Footer />
     </>
   );
 }
 
 function App() {
   return (
-    <Router>
-      <Navbar />
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
+        {/* Routes publiques (site vitrine) */}
+        <Route path="/" element={
+          <>
+            <Navbar />
+            <HomePage />
+          </>
+        } />
+        <Route path="/signin" element={
+          <>
+            <Navbar />
+            <SignIn />
+            <Footer />
+          </>
+        } />
+        <Route path="/signup" element={
+          <>
+            <Navbar />
+            <SignUp />
+            <Footer />
+          </>
+        } />
+
+        {/* Routes privées (application médicale) */}
+        <Route path="/app" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="new-analysis" element={<NewAnalysis />} />
+          <Route path="image-library" element={<ImageLibrary />} />
+          <Route path="patients" element={<Patients />} />
+          <Route path="history" element={<History />} />
+          <Route path="statistics" element={<Statistics />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 
 export default App;
-
-
-
-
-
-
-

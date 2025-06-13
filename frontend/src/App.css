@@ -188,6 +188,24 @@ main {
 }
 
 
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
 
 
 
