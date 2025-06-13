@@ -1,4 +1,27 @@
 import React from 'react';
+import { register } from '../api';
+
+const SignUp = () => {
+  const [formData, setFormData] = useState({
+    nom: '',
+    prenom: '',
+    email: '',
+    password: ''
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await register(formData);
+      alert(response.message || 'Inscription réussie !');
+      window.location.href = '/signin'; // Redirection
+    } catch (error) {
+      alert(error.message || 'Erreur lors de l\'inscription');
+    }
+  };
+
+  // ... (le reste du formulaire reste inchangé)
+};
 import '../App.css';
 import thumbnailImage from './image/thumbnail_800x480px-119034.jpg';
 
