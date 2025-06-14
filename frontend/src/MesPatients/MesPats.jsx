@@ -1,35 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSearch, FiUserPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import './MesPats.css';
 
 const MesPats = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const patientsPerPage = 8;
 
-  const patients = [
-    { id: 1, name: 'Mohammed Alami', age: 45, gender: 'M', lastVisit: '15/05/2023', status: 'active' },
-    { id: 2, name: 'Fatima Zahra', age: 32, gender: 'F', lastVisit: '10/05/2023', status: 'active' },
-    { id: 3, name: 'Karim Benzema', age: 28, gender: 'M', lastVisit: '05/05/2023', status: 'inactive' },
-    { id: 4, name: 'Leila Marrakchi', age: 56, gender: 'F', lastVisit: '28/04/2023', status: 'active' },
-    { id: 5, name: 'Youssef Nouri', age: 38, gender: 'M', lastVisit: '22/04/2023', status: 'active' },
-    { id: 6, name: 'Amina Belhaj', age: 29, gender: 'F', lastVisit: '18/04/2023', status: 'inactive' },
-    { id: 7, name: 'Hassan El Fassi', age: 62, gender: 'M', lastVisit: '15/04/2023', status: 'active' },
-    { id: 8, name: 'Khadija Toumi', age: 41, gender: 'F', lastVisit: '10/04/2023', status: 'active' },
-    { id: 9, name: 'Omar Saber', age: 35, gender: 'M', lastVisit: '05/04/2023', status: 'inactive' },
-    { id: 10, name: 'Zineb Akkaoui', age: 27, gender: 'F', lastVisit: '01/04/2023', status: 'active' }
-  ];
+  // Fonction pour récupérer les patients depuis l'API
+  const fetchPatients = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Token d\'authentification manquant');
+      }
+      
+      console.log('Récupération des patients...');
+      
+      const response = await fetch('http://localhost:5000/api/patients', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
+      console.log('Réponse reçue:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Erreur réponse:', errorText);
+        throw new Error(`Erreur ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Données reçues:', data);
+      setPatients(data.patients || []);
+    } catch (err) {
+      setError(err.message);
+      console.error('Erreur complète:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Charger les patients au montage du composant
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  // Filtrage des patients
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination
   const indexOfLastPatient = currentPage * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
   const currentPatients = filteredPatients.slice(indexOfFirstPatient, indexOfLastPatient);
   const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  if (loading) {
+    return (
+      <div className="patients-container">
+        <div className="loading">Chargement des patients...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="patients-container">
+        <div className="error">Erreur: {error}</div>
+        <button onClick={fetchPatients} className="retry-btn">
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="patients-container">
@@ -59,6 +113,7 @@ const MesPats = () => {
               <th>Nom complet</th>
               <th>Âge</th>
               <th>Genre</th>
+              <th>CIN</th>
               <th>Dernière visite</th>
               <th>Statut</th>
               <th>Actions</th>
@@ -78,6 +133,7 @@ const MesPats = () => {
                   </td>
                   <td>{patient.age} ans</td>
                   <td>{patient.gender === 'M' ? 'Homme' : 'Femme'}</td>
+                  <td>{patient.cin}</td>
                   <td>{patient.lastVisit}</td>
                   <td>
                     <span className={`status-badge ${patient.status}`}>
@@ -98,8 +154,11 @@ const MesPats = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="no-results">
-                  Aucun patient trouvé
+                <td colSpan="7" className="no-results">
+                  {searchTerm ? 
+                    `Aucun patient trouvé pour "${searchTerm}"` : 
+                    'Aucun patient enregistré'
+                  }
                 </td>
               </tr>
             )}

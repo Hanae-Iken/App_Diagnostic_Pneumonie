@@ -1,264 +1,614 @@
-/* NOVANALY.css */
+/* NOVANALY.css - Affichage responsive pour l'analyse médicale - VERSION CORRIGÉE */
 
-.new-analysis-page {
-  max-width: 9000px;
+/* Reset et base */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: auto; /* Permettre la hauteur automatique */
+  overflow-x: hidden; /* Éviter le scroll horizontal */
+  overflow-y: auto; /* Permettre le scroll vertical */
+}
+
+/* Conteneur principal - Responsive ET scrollable */
+.medical-analysis-container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: auto; /* CHANGÉ: auto au lieu de 100vh */
+  padding: clamp(1rem, 3vw, 2rem);
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden; /* Éviter le débordement horizontal */
+  padding-bottom: 3rem; /* Espace en bas pour éviter la coupure */
+}
+
+/* Container général pour le formulaire */
+.container {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  color: #333;
+  padding: clamp(1rem, 3vw, 2rem);
+  min-height: auto; /* CHANGÉ: auto au lieu de 100vh */
+  overflow-y: visible; /* Permettre le scroll */
 }
 
-.page-header {
-  margin-bottom: 2.5rem;
+/* Titre principal - Responsive */
+.main-title {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-align: center;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: clamp(1rem, 3vw, 2rem);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  line-height: 1.2;
 }
 
-.page-header h1 {
-  font-size: 2.2rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
+/* Masquer les détails techniques */
+.technical-details {
+  display: none !important;
 }
 
-form {
+/* Masquer spécifiquement le modèle utilisé */
+.model-info,
+.modele-utilise {
+  display: none !important;
+}
+
+/* Carte des résultats - Responsive ET scrollable */
+.results-card {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 2.5rem;
+  border-radius: clamp(15px, 2vw, 20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  padding: clamp(1rem, 3vw, 2rem);
+  margin: clamp(1rem, 2vw, 2rem) 0;
+  border: 1px solid #e1e8ed;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible; /* AJOUTÉ: permettre le débordement visible */
+  height: auto; /* AJOUTÉ: hauteur automatique */
 }
 
-.form-section {
-  margin-bottom: 2.5rem;
+/* Informations patient - Style carte responsive */
+.patient-info {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border-radius: clamp(10px, 2vw, 15px);
+  margin-bottom: clamp(1rem, 2vw, 2rem);
+  box-shadow: 0 10px 30px rgba(240, 147, 251, 0.3);
 }
 
-.form-section h2 {
-  font-size: 1.4rem;
+.patient-info h3 {
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.patient-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: clamp(0.5rem, 2vw, 1rem);
+  margin-top: 1rem;
+}
+
+.patient-info p {
+  background: rgba(255,255,255,0.2);
+  padding: clamp(0.5rem, 1.5vw, 0.8rem);
+  border-radius: 10px;
+  margin: 0;
+  backdrop-filter: blur(10px);
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  word-break: break-word;
+}
+
+/* Diagnostic principal - Responsive */
+.diagnostic-main {
+  text-align: center;
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: clamp(15px, 2vw, 20px);
+  margin: clamp(1rem, 2vw, 2rem) 0;
+  border: 3px solid;
+  position: relative;
+  overflow: hidden;
+}
+
+.diagnostic-main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.1;
+  background: radial-gradient(circle at center, currentColor 0%, transparent 70%);
+}
+
+.diagnostic-normal {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  border-color: #10b981;
+  color: #065f46;
+}
+
+.diagnostic-pneumonie {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+.diagnostic-title {
+  font-size: clamp(1.5rem, 5vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  line-height: 1.2;
+}
+
+.confidence-score {
+  font-size: clamp(1rem, 3vw, 1.5rem);
   font-weight: 600;
-  color: #3498db;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #eee;
+  position: relative;
+  z-index: 1;
 }
 
+/* Section heatmap - Responsive ET scrollable */
+.heatmap-section {
+  margin: clamp(1rem, 2vw, 2rem) 0;
+  overflow: visible; /* AJOUTÉ */
+}
+
+.heatmap-title {
+  text-align: center;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  color: #374151;
+  font-weight: 600;
+}
+
+.heatmap-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1rem, 2vw, 2rem);
+  align-items: start;
+  overflow: visible; /* AJOUTÉ */
+}
+
+/* Layout responsive pour la heatmap */
+@media (min-width: 768px) {
+  .heatmap-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1200px) {
+  .heatmap-container {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}
+
+.heatmap-image-container {
+  background: white;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  text-align: center;
+  width: 100%;
+  overflow: visible; /* AJOUTÉ */
+}
+
+.heatmap-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  max-height: min(400px, 50vh); /* CHANGÉ: 50vh au lieu de 60vh */
+  object-fit: contain;
+  width: auto;
+  display: block; /* AJOUTÉ pour éviter les espaces */
+  margin: 0 auto; /* AJOUTÉ pour centrer */
+}
+
+.heatmap-description {
+  margin-top: 1rem;
+  color: #6b7280;
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+  font-style: italic;
+  padding: 0 0.5rem;
+}
+
+/* Panneau des probabilités - Responsive */
+.probabilities-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  width: 100%;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem); /* AJOUTÉ: marge en bas */
+}
+
+.probabilities-panel h4 {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  margin-bottom: clamp(0.8rem, 1.5vw, 1rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.probability-item {
+  margin-bottom: clamp(0.8rem, 1.5vw, 1rem);
+}
+
+.probability-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
+  align-items: center;
+}
+
+.probability-bar {
+  width: 100%;
+  height: clamp(6px, 1vw, 8px);
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.probability-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.probability-normal {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.probability-pneumonie {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+/* Panneau des détails essentiels - Responsive */
+.essential-details {
+  background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border-radius: 15px;
+  margin-top: clamp(0.8rem, 1.5vw, 1rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem); /* AJOUTÉ: marge en bas */
+  box-shadow: 0 5px 15px rgba(255, 234, 167, 0.4);
+  width: 100%;
+}
+
+.essential-details h4 {
+  color: #d63031;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  margin-bottom: clamp(0.8rem, 1.5vw, 1rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: clamp(0.6rem, 1.2vw, 0.8rem);
+  padding: clamp(0.4rem, 1vw, 0.5rem);
+  background: rgba(255,255,255,0.3);
+  border-radius: 8px;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #2d3436;
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+}
+
+.detail-value {
+  color: #636e72;
+  font-weight: 500;
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Recommandations - Responsive */
+.recommendations-panel {
+  background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+  color: white;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border-radius: 15px;
+  margin-top: clamp(0.8rem, 1.5vw, 1rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem); /* AJOUTÉ: marge en bas */
+  box-shadow: 0 10px 30px rgba(162, 155, 254, 0.3);
+  width: 100%;
+}
+
+.recommendations-panel h4 {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  margin-bottom: clamp(0.8rem, 1.5vw, 1rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.recommendations-list {
+  list-style: none;
+  padding: 0;
+}
+
+.recommendations-list li {
+  background: rgba(255,255,255,0.1);
+  margin-bottom: clamp(0.6rem, 1.2vw, 0.8rem);
+  padding: clamp(0.8rem, 1.5vw, 1rem);
+  border-radius: 10px;
+  border-left: 4px solid #fd79a8;
+  backdrop-filter: blur(10px);
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+  line-height: 1.4;
+}
+
+.recommendations-list li:before {
+  content: "💊";
+  margin-right: 0.5rem;
+}
+
+/* Date d'analyse - Responsive */
+.analysis-date {
+  text-align: center;
+  color: #6b7280;
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+  margin: clamp(1.5rem, 2vw, 2rem) 0;
+  padding: clamp(0.8rem, 1.5vw, 1rem);
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px dashed #d1d5db;
+}
+
+/* Boutons d'action - Responsive ET avec plus d'espace */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.8rem, 2vw, 1rem);
+  margin-top: clamp(1.5rem, 2vw, 2rem);
+  margin-bottom: clamp(2rem, 3vw, 3rem); /* AJOUTÉ: marge importante en bas */
+  flex-wrap: wrap;
+  padding: 0 1rem;
+}
+
+.action-button {
+  padding: clamp(0.8rem, 1.5vw, 1rem) clamp(1.5rem, 3vw, 2rem);
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+/* Styles pour les messages d'erreur */
+.error-message {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #ef4444;
+}
+
+/* Styles pour les formulaires */
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #555;
+  color: #374151;
 }
 
 .form-group input,
-.form-group textarea,
-.custom-select select {
+.form-group textarea {
   width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1px solid #ddd;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 1rem;
-  transition: all 0.3s ease;
-  background-color: #f9fafb;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus,
-.form-group textarea:focus,
-.custom-select select:focus {
+.form-group textarea:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  background-color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.form-group textarea {
-  min-height: 120px;
-  resize: vertical;
-}
-
-.form-row {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.form-row .form-group {
-  flex: 1;
-}
-
-.custom-select {
-  position: relative;
-}
-
-.custom-select .select-arrow {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: #777;
-}
-
-.custom-select select {
-  appearance: none;
-  padding-right: 2.5rem;
-}
-
-.upload-container {
-  margin-top: 1rem;
-}
-
-.upload-area {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  padding: 2.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background-color: #f9fafb;
-}
-
-.upload-area:hover {
-  border-color: #3498db;
-  background-color: #f0f7fd;
-}
-
-.upload-area p {
-  margin: 1rem 0 0.5rem;
-  color: #555;
-}
-
-.upload-area p span {
-  color: #3498db;
-  font-weight: 500;
-}
-
-.upload-area small {
-  color: #888;
-  font-size: 0.85rem;
-}
-
-.upload-icon {
-  color: #3498db;
-  margin-bottom: 0.5rem;
-}
-
-.image-preview-container {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.image-preview {
-  position: relative;
-  height: 250px;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.image-preview img {
-  max-height: 100%;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-.remove-image {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  border: none;
-  width: 32px;
-  height: 32px;
+/* Animation de chargement */
+.loading-spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
 }
 
-.remove-image:hover {
-  background: rgba(0, 0, 0, 0.8);
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.image-info {
-  padding: 0.75rem 1rem;
-  background: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid #eee;
+/* Masquer les éléments techniques spécifiques */
+.bg-gray-50 p:has(strong:contains("Modèle")),
+.detail-item:has(.detail-label:contains("Modèle")),
+div:contains("Modèle:"),
+[data-technical="true"] {
+  display: none !important;
 }
 
-.image-info p {
-  margin: 0;
-  font-weight: 500;
-  color: #444;
-}
-
-.image-info span {
-  color: #888;
-  font-size: 0.85rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.primary-btn, .secondary-btn {
-  padding: 0.8rem 1.8rem;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.primary-btn {
-  background-color: #3498db;
-  color: white;
-  border: none;
-}
-
-.primary-btn:hover {
-  background-color: #2980b9;
-  transform: translateY(-1px);
-}
-
-.primary-btn:disabled {
-  background-color: #bdc3c7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.secondary-btn {
-  background-color: white;
-  color: #3498db;
-  border: 1px solid #3498db;
-}
-
-.secondary-btn:hover {
-  background-color: #f0f7fd;
-}
-
-@media (max-width: 768px) {
-  .new-analysis-page {
-    padding: 1rem;
+/* Style d'impression */
+@media print {
+  .action-buttons {
+    display: none;
   }
   
-  form {
-    padding: 1.5rem;
+  .heatmap-container {
+    grid-template-columns: 1fr;
   }
   
-  .form-row {
+  .medical-analysis-container {
+    background: white;
+  }
+  
+  .results-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+/* Responsive - Points de rupture détaillés */
+@media (max-width: 640px) {
+  .patient-info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .heatmap-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
     flex-direction: column;
+    align-items: center;
     gap: 1rem;
+    margin-bottom: 2rem; /* AJOUTÉ */
   }
+  
+  .action-button {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  
+  .detail-value {
+    text-align: left;
+  }
+  
+  /* AJOUTÉ: Réduire les hauteurs max sur mobile */
+  .heatmap-image {
+    max-height: 300px;
+  }
+  
+  .medical-analysis-container {
+    padding: 0.5rem;
+    padding-bottom: 2rem; /* Espace en bas sur mobile */
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .heatmap-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .patient-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .heatmap-container {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+  
+  .patient-info-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Conteneur principal - Ajustement pour éviter le débordement */
+@media (max-width: 480px) {
+  .medical-analysis-container {
+    padding: 0.5rem;
+    padding-bottom: 2rem; /* IMPORTANT: espace en bas */
+  }
+  
+  .results-card {
+    padding: 1rem;
+    margin: 0.5rem 0;
+    border-radius: 10px;
+  }
+  
+  .main-title {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+  
+  .container {
+    padding: 0.5rem;
+    padding-bottom: 2rem; /* IMPORTANT: espace en bas */
+  }
+}
+
+/* AJOUTS CRITIQUES pour le scroll */
+body {
+  padding-bottom: 2rem !important; /* Espace en bas de page */
+}
+
+.medical-analysis-container,
+.container {
+  padding-bottom: 3rem !important; /* Espace généreux en bas */
+  margin-bottom: 2rem; /* Marge supplémentaire */
+}
+
+/* Assurer que tous les conteneurs permettent le scroll */
+* {
+  overflow-wrap: break-word;
+}
+
+/* Éviter les éléments qui sortent de l'écran */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
 }
