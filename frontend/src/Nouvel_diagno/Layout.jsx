@@ -9,14 +9,17 @@ const Layout = () => {
   const location = useLocation();
 
   const menuItems = [
-    { path: '/', name: 'Tableau de bord', icon: '📊' },
-    { path: '/new-analysis', name: 'Nouvelle analyse', icon: '🖼️' },
-    { path: '/image-library', name: 'Bibliothèque', icon: '📚' },
-    { path: '/patients', name: 'Patients', icon: '👨‍⚕️' },
-    { path: '/history', name: 'Historique', icon: '🕒' },
-    { path: '/statistics', name: 'Statistiques', icon: '📈' },
-    { path: '/settings', name: 'Paramètres', icon: '⚙️' }
+    { path: '/app', name: 'Tableau de bord', icon: '📊' },
+    { path: '/app/new-analysis', name: 'Nouvelle analyse', icon: '🖼️' },
+    { path: '/app/image-library', name: 'Bibliothèque', icon: '📚' },
+    { path: '/app/patients', name: 'Patients', icon: '👨‍⚕️' },
+    { path: '/app/history', name: 'Historique', icon: '🕒' },
+    { path: '/app/statistics', name: 'Statistiques', icon: '📈' },
+    { path: '/app/settings', name: 'Paramètres', icon: '⚙️' }
   ];
+
+  // Récupérer le nom d'utilisateur depuis localStorage
+  const username = localStorage.getItem('username') || 'Dr. Utilisateur';
 
   return (
     <div className="app-container">
@@ -28,7 +31,7 @@ const Layout = () => {
               <FiUser size={24} />
             </div>
             <div className="profile-info">
-              <h3>Dr.  Mohamed Berrada</h3>
+              <h3>{username}</h3>
               <p>Radiologue</p>
             </div>
           </div>
@@ -79,7 +82,7 @@ const Layout = () => {
               <span className="badge">3</span>
             </button>
             <div className="user-profile">
-              <span>Dr. Berrada</span>
+              <span>{username}</span>
             </div>
           </div>
         </header>

@@ -1,142 +1,156 @@
-import React, { useState, useRef } from 'react';
-import { FiUpload, FiX, FiChevronDown } from 'react-icons/fi';
-import './NOVANALY.css';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const NewAnalysis = () => {
-  const [patient, setPatient] = useState({
-    nom: '',
-    age: '',
-    sexe: '',
-    symptomes: ''
-  });
-  const [image, setImage] = useState(null);
-  const fileInputRef = useRef(null);
+    const [formData, setFormData] = useState({
+        fullName: '',
+        age: '',
+        cin: '',
+        symptoms: '',
+        notes: '',
+        file: null
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Analyse soumise:', { patient, image });
-    // Logique de soumission ici
-  };
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setImage(e.target.files[0]);
-    }
-  };
+    const handleFileChange = (e) => {
+        setFormData(prev => ({ ...prev, file: e.target.files[0] }));
+    };
 
-  return (
-    <div className="new-analysis-page">
-      <div className="page-header">
-        <h1>Nouvelle analyse</h1>
-      </div>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-section">
-          <h2>Informations patient</h2>
-          
-          <div className="form-group">
-            <label>Nom complet</label>
-            <input
-              type="text"
-              value={patient.nom}
-              onChange={(e) => setPatient({...patient, nom: e.target.value})}
-              required
-            />
-          </div>
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append('file', formData.file);
+            formDataToSend.append('fullName', formData.fullName);
+            formDataToSend.append('age', formData.age);
+            formDataToSend.append('cin', formData.cin);
+            formDataToSend.append('symptoms', formData.symptoms);
+            formDataToSend.append('notes', formData.notes);
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Âge</label>
-              <input
-                type="number"
-                value={patient.age}
-                onChange={(e) => setPatient({...patient, age: e.target.value})}
-                required
-                min="1"
-                max="120"
-              />
-            </div>
+            const token = localStorage.getItem('token');
+            const response = await axios.post('http://localhost:5000/upload', formDataToSend, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 200) {
+                navigate('/image-library', { state: { success: 'Analyse créée avec succès!' } });
+            }
+        } catch (err) {
+            setError(err.response?.data?.error || 'Erreur lors de l\'envoi du fichier');
+            console.error('Upload error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="container mx-auto p-6">
+            <h1 className="text-2xl font-bold mb-6">Nouvelle Analyse Médicale</h1>
             
-            <div className="form-group">
-              <label>Sexe</label>
-              <div className="custom-select">
-                <select
-                  value={patient.sexe}
-                  onChange={(e) => setPatient({...patient, sexe: e.target.value})}
-                  required
+            {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block mb-2">Nom Complet</label>
+                        <input
+                            type="text"
+                            name="fullName"
+                            value={formData.fullName}
+                            onChange={handleChange}
+                            className="w-full p-2 border rounded"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-2">Âge</label>
+                        <input
+                            type="number"
+                            name="age"
+                            value={formData.age}
+                            onChange={handleChange}
+                            className="w-full p-2 border rounded"
+                            min="1"
+                            max="120"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-2">CIN</label>
+                        <input
+                            type="text"
+                            name="cin"
+                            value={formData.cin}
+                            onChange={handleChange}
+                            className="w-full p-2 border rounded"
+                            pattern="[A-Za-z]{1,2}[0-9]{6}"
+                            title="Format CIN: 1-2 lettres suivies de 6 chiffres"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-2">Image Médicale</label>
+                        <input
+                            type="file"
+                            name="file"
+                            onChange={handleFileChange}
+                            className="w-full p-2 border rounded"
+                            accept=".png,.jpg,.jpeg,.dcm"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block mb-2">Symptômes</label>
+                    <textarea
+                        name="symptoms"
+                        value={formData.symptoms}
+                        onChange={handleChange}
+                        className="w-full p-2 border rounded"
+                        rows="3"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block mb-2">Notes supplémentaires</label>
+                    <textarea
+                        name="notes"
+                        value={formData.notes}
+                        onChange={handleChange}
+                        className="w-full p-2 border rounded"
+                        rows="2"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`bg-blue-600 text-white px-4 py-2 rounded ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
                 >
-                  <option value="">Sélectionner</option>
-                  <option value="M">Masculin</option>
-                  <option value="F">Féminin</option>
-                </select>
-                <FiChevronDown className="select-arrow" />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Symptômes</label>
-            <textarea
-              value={patient.symptomes}
-              onChange={(e) => setPatient({...patient, symptomes: e.target.value})}
-              required
-              placeholder="Décrivez les symptômes observés..."
-            />
-          </div>
+                    {isLoading ? 'Envoi en cours...' : 'Soumettre l\'analyse'}
+                </button>
+            </form>
         </div>
-
-        <div className="form-section">
-          <h2>Imagerie médicale</h2>
-          
-          <div className="upload-container">
-            {image ? (
-              <div className="image-preview-container">
-                <div className="image-preview">
-                  <img src={URL.createObjectURL(image)} alt="Preview" />
-                  <button
-                    type="button"
-                    onClick={() => setImage(null)}
-                    className="remove-image"
-                  >
-                    <FiX size={20} />
-                  </button>
-                </div>
-                <div className="image-info">
-                  <p>{image.name}</p>
-                  <span>{(image.size / 1024).toFixed(2)} KB</span>
-                </div>
-              </div>
-            ) : (
-              <div 
-                className="upload-area"
-                onClick={() => fileInputRef.current.click()}
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageChange}
-                  accept="image/*,.dcm"
-                  hidden
-                />
-                <FiUpload size={40} className="upload-icon" />
-                <p>Glissez-déposez une image ou <span>parcourir</span></p>
-                <small>Formats supportés: JPG, PNG, DICOM</small>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="form-actions">
-          <button type="button" className="secondary-btn">
-            Annuler
-          </button>
-          <button type="submit" className="primary-btn" disabled={!image}>
-            Lancer l'analyse
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+    );
 };
 
 export default NewAnalysis;

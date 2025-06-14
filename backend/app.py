@@ -9,9 +9,14 @@ from uploads.uploads import upload_bp
 from afficher_les_resultats.historique import history_bp
 from afficher_les_resultats.analyze import analyze_bp
 
-
 app = Flask(__name__)
-CORS(app)
+
+# Configuration CORS simplifiée et plus permissive
+CORS(app, 
+     origins=["http://localhost:3000", "http://localhost:3001"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"],
+     supports_credentials=True)
 
 # Exécute la migration au démarrage
 run_migration()
@@ -20,22 +25,15 @@ run_migration()
 client = MongoClient(MONGO_URI)
 db = client["mon_site"]
 
-
 # Ajouter la base de données à l'app
-
 app.config["db"] = db
 
 # Enregistrer les routes
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(results_bp)
-
-
 app.register_blueprint(upload_bp)
-
 app.register_blueprint(history_bp)
-
 app.register_blueprint(analyze_bp)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
