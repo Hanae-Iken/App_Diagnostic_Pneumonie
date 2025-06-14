@@ -1,1 +1,26 @@
 frontend/node_modules/
+
+# # Fichiers à ignorer
+ia/data/
+ia/models/
+# # __pycache__/
+# # *.pyc
+# .venv/
+
+ia/configs/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.vscode/
+models/
+ia/data/raw/
+logs/
+models/
+visualizations/
+data/
+ia/models
+
