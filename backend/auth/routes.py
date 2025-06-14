@@ -167,3 +167,4 @@ def reset_password():
     except Exception as e:
         print(f"Erreur lors de la réinitialisation du mot de passe: {e}")
         return jsonify({"error": "Erreur interne du serveur"}), 500
+    
