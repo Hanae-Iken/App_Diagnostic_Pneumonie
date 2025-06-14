@@ -12,7 +12,7 @@ from afficher_les_resultats.analyze import analyze_bp
 app = Flask(__name__)
 
 # Configuration CORS simplifiée et plus permissive
-CORS(app, 
+CORS(app,
      origins=["http://localhost:3000", "http://localhost:3001"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization"],

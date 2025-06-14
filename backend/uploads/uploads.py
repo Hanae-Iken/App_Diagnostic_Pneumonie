@@ -17,57 +17,69 @@ def allowed_file(filename):
 
 @upload_bp.route('/upload', methods=['POST'])
 @token_required
-def upload_file(current_user):
-    # Vérifier que tous les champs requis sont présents
-    required_fields = ['fullName', 'age', 'cin', 'symptoms']
-    for field in required_fields:
-        if field not in request.form:
-            return jsonify({'error': f'Le champ {field} est requis'}), 400
+def upload_file(user_id):  # Le décorateur token_required passe user_id
+    try:
+        # Vérifier que tous les champs requis sont présents
+        required_fields = ['fullName', 'age', 'cin', 'symptoms']
+        for field in required_fields:
+            if field not in request.form:
+                return jsonify({'error': f'Le champ {field} est requis'}), 400
 
-    # Vérifier le fichier
-    if 'file' not in request.files:
-        return jsonify({'error': 'Aucun fichier envoyé'}), 400
+        # Vérifier le fichier
+        if 'file' not in request.files:
+            return jsonify({'error': 'Aucun fichier envoyé'}), 400
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'Aucun fichier sélectionné'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Aucun fichier sélectionné'}), 400
 
-    if file and allowed_file(file.filename):
-        try:
-            # Sauvegarder le fichier
-            filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
-            file.save(filepath)
+        if not file or not allowed_file(file.filename):
+            return jsonify({'error': 'Type de fichier non autorisé. Utilisez: png, jpg, jpeg, dcm'}), 400
 
-            # Enregistrement dans MongoDB
-            db = current_app.config['db']
-            result = db.images.insert_one({
-                'filename': filename,
-                'filepath': filepath,
-                'upload_date': datetime.utcnow(),
-                'user_id': ObjectId(current_user['_id']),
-                'patient': {
-                    'fullName': request.form['fullName'],
-                    'age': int(request.form['age']),
-                    'cin': request.form['cin'],
-                    'symptoms': request.form['symptoms']
-                },
-                'notes': request.form.get('notes', ''),
-                'status': 'pending',
-                'metadata': {
-                    'original_filename': file.filename,
-                    'content_type': file.content_type
-                }
-            })
+        # Sauvegarder le fichier
+        filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
 
-            return jsonify({
-                'message': 'Fichier uploadé avec succès',
-                'fileId': str(result.inserted_id),
-                'filename': filename
-            }), 200
+        # Enregistrement dans MongoDB
+        db = current_app.config['db']
+        
+        # Structure adaptée aux champs du frontend
+        image_data = {
+            'filename': filename,
+            'filepath': filepath,
+            'dateUpload': datetime.utcnow(),
+            'utilisateurId': ObjectId(user_id),  # Utilisateur qui a uploadé
+            'patient': {
+                'nomComplet': request.form['fullName'],
+                'age': int(request.form['age']),
+                'cin': request.form['cin'],
+                'symptomes': request.form['symptoms']
+            },
+            'notes': request.form.get('notes', ''),
+            'statut': 'en_attente',  # en_attente, analyse, termine
+            'metadata': {
+                'nomOriginal': file.filename,
+                'typeContenu': file.content_type,
+                'taille': os.path.getsize(filepath)
+            }
+        }
 
-        except Exception as e:
-            current_app.logger.error(f'Erreur upload: {str(e)}')
-            return jsonify({'error': 'Erreur lors du traitement du fichier'}), 500
+        result = db.images.insert_one(image_data)
 
-    return jsonify({'error': 'Type de fichier non autorisé'}), 400
+        return jsonify({
+            'message': 'Fichier uploadé avec succès',
+            'fileId': str(result.inserted_id),
+            'filename': filename,
+            'patient': {
+                'nomComplet': request.form['fullName'],
+                'age': request.form['age'],
+                'cin': request.form['cin']
+            }
+        }), 200
+
+    except ValueError as e:
+        return jsonify({'error': 'Âge invalide - doit être un nombre'}), 400
+    except Exception as e:
+        current_app.logger.error(f'Erreur upload: {str(e)}')
+        return jsonify({'error': 'Erreur lors du traitement du fichier'}), 500
