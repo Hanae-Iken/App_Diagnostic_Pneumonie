@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiUserPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiSearch, FiUserPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiX, FiSave } from 'react-icons/fi';
 import './MesPats.css';
 
 const MesPats = () => {
@@ -8,6 +8,16 @@ const MesPats = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingPatient, setEditingPatient] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    age: '',
+    cin: '',
+    symptoms: '',
+    notes: ''
+  });
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const patientsPerPage = 8;
 
   // Fonction pour récupérer les patients depuis l'API
@@ -45,6 +55,129 @@ const MesPats = () => {
       console.error('Erreur complète:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fonction pour modifier un patient
+  const updatePatient = async (patientId, updatedData) => {
+    try {
+      setActionLoading(true);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Token d\'authentification manquant');
+      }
+
+      const response = await fetch(`http://localhost:5000/api/patients/${patientId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la modification');
+      }
+
+      const result = await response.json();
+      
+      // Mettre à jour la liste des patients localement
+      setPatients(prevPatients => 
+        prevPatients.map(patient => 
+          patient.id === patientId 
+            ? { ...patient, ...updatedData }
+            : patient
+        )
+      );
+
+      setEditingPatient(null);
+      setError('');
+      
+      // Afficher un message de succès
+      alert('Patient modifié avec succès !');
+      
+    } catch (err) {
+      setError(err.message);
+      console.error('Erreur modification:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Fonction pour supprimer un patient
+  const deletePatient = async (patientId) => {
+    try {
+      setActionLoading(true);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Token d\'authentification manquant');
+      }
+
+      const response = await fetch(`http://localhost:5000/api/patients/${patientId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la suppression');
+      }
+
+      // Supprimer le patient de la liste locale
+      setPatients(prevPatients => 
+        prevPatients.filter(patient => patient.id !== patientId)
+      );
+
+      setDeleteConfirm(null);
+      setError('');
+      
+      // Afficher un message de succès
+      alert('Patient supprimé avec succès !');
+      
+    } catch (err) {
+      setError(err.message);
+      console.error('Erreur suppression:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Gérer l'ouverture du formulaire de modification
+  const handleEditClick = (patient) => {
+    setEditingPatient(patient.id);
+    setEditForm({
+      name: patient.name,
+      age: patient.age,
+      cin: patient.cin,
+      symptoms: patient.symptoms || '',
+      notes: patient.notes || ''
+    });
+  };
+
+  // Gérer la soumission du formulaire de modification
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    if (editingPatient) {
+      updatePatient(editingPatient, editForm);
+    }
+  };
+
+  // Gérer la confirmation de suppression
+  const handleDeleteClick = (patient) => {
+    setDeleteConfirm(patient);
+  };
+
+  // Confirmer la suppression
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      deletePatient(deleteConfirm.id);
     }
   };
 
@@ -99,10 +232,10 @@ const MesPats = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="add-patient-btn">
+          {/* <button className="add-patient-btn">
             <FiUserPlus size={18} />
             Nouveau patient
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -142,10 +275,18 @@ const MesPats = () => {
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button className="edit-btn">
+                      <button 
+                        className="edit-btn"
+                        onClick={() => handleEditClick(patient)}
+                        disabled={actionLoading}
+                      >
                         <FiEdit2 size={16} />
                       </button>
-                      <button className="delete-btn">
+                      <button 
+                        className="delete-btn"
+                        onClick={() => handleDeleteClick(patient)}
+                        disabled={actionLoading}
+                      >
                         <FiTrash2 size={16} />
                       </button>
                     </div>
@@ -193,6 +334,116 @@ const MesPats = () => {
           >
             <FiChevronRight size={18} />
           </button>
+        </div>
+      )}
+
+      {/* Modal de modification */}
+      {editingPatient && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Modifier le patient</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setEditingPatient(null)}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="edit-form">
+              <div className="form-group">
+                <label>Nom complet</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Âge</label>
+                <input
+                  type="number"
+                  value={editForm.age}
+                  onChange={(e) => setEditForm({...editForm, age: parseInt(e.target.value)})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>CIN</label>
+                <input
+                  type="text"
+                  value={editForm.cin}
+                  onChange={(e) => setEditForm({...editForm, cin: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Symptômes</label>
+                <textarea
+                  value={editForm.symptoms}
+                  onChange={(e) => setEditForm({...editForm, symptoms: e.target.value})}
+                  rows="3"
+                />
+              </div>
+              <div className="form-group">
+                <label>Notes</label>
+                <textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                  rows="3"
+                />
+              </div>
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="cancel-btn"
+                  onClick={() => setEditingPatient(null)}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="submit" 
+                  className="save-btn"
+                  disabled={actionLoading}
+                >
+                  <FiSave size={16} />
+                  {actionLoading ? 'Enregistrement...' : 'Enregistrer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {deleteConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content delete-modal">
+            <div className="modal-header">
+              <h2>Confirmer la suppression</h2>
+            </div>
+            <div className="modal-body">
+              <p>Êtes-vous sûr de vouloir supprimer le patient <strong>{deleteConfirm.name}</strong> ?</p>
+              <p className="warning">Cette action est irréversible et supprimera toutes les données associées.</p>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="cancel-btn"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={actionLoading}
+              >
+                Annuler
+              </button>
+              <button 
+                className="delete-confirm-btn"
+                onClick={confirmDelete}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
