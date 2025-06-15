@@ -1,21 +1,33 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { FiSearch, FiBell, FiUser, FiMenu, FiX } from 'react-icons/fi';
 import './Layout.css';
 
 const Layout = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-
+  
   const menuItems = [
-    { path: '/app', name: 'Tableau de bord', icon: '📊' },
-    { path: '/app/new-analysis', name: 'Nouvelle analyse', icon: '🖼️' },
-    // { path: '/app/image-library', name: 'Bibliothèque', icon: '📚' },
-    { path: '/app/patients', name: 'Patients', icon: '👨‍⚕️' },
-    { path: '/app/history', name: 'Historique', icon: '🕒' },
-    // { path: '/app/statistics', name: 'Statistiques', icon: '📈' },
-    // { path: '/app/settings', name: 'Paramètres', icon: '⚙️' }
+    { 
+      path: '/app', 
+      name: 'Tableau de bord', 
+      icon: '📊'
+    },
+    { 
+      path: '/app/new-analysis', 
+      name: 'Nouvelle analyse', 
+      icon: '➕'
+    },
+    { 
+      path: '/app/patients', 
+      name: 'Patients', 
+      icon: '👥'
+    },
+    { 
+      path: '/app/history', 
+      name: 'Historique', 
+      icon: '🕐'
+    }
   ];
 
   // Récupérer le nom d'utilisateur depuis localStorage
@@ -28,20 +40,21 @@ const Layout = () => {
         <div className="sidebar-header">
           <div className="profile">
             <div className="avatar">
-              <FiUser size={24} />
+              <span style={{fontSize: '24px'}}>👤</span>
             </div>
             <div className="profile-info">
               <h3>{username}</h3>
-              <p>Radiologue</p>
+              <p>Médecin spécialiste</p>
             </div>
           </div>
-          <button 
+          <button
             className="close-menu"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <FiX size={24} />
+            <span style={{fontSize: '24px'}}>✕</span>
           </button>
         </div>
+        
         <nav>
           {menuItems.map((item) => (
             <Link
@@ -61,14 +74,15 @@ const Layout = () => {
       <div className="main-content">
         {/* Top Bar */}
         <header className="top-bar">
-          <button 
+          <button
             className="menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <FiMenu size={24} />
+            <span style={{fontSize: '24px'}}>☰</span>
           </button>
+
           <div className="search-bar">
-            <FiSearch className="search-icon" />
+            <span className="search-icon" style={{fontSize: '16px'}}>🔍</span>
             <input
               type="text"
               placeholder="Rechercher patients, analyses..."
@@ -76,15 +90,16 @@ const Layout = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="user-actions">
+
+          {/* <div className="user-actions">
             <button className="notification-btn">
-              <FiBell size={20} />
+              <span style={{fontSize: '20px'}}>🔔</span>
               <span className="badge">3</span>
             </button>
             <div className="user-profile">
               <span>{username}</span>
             </div>
-          </div>
+          </div> */}
         </header>
 
         {/* Page Content */}

@@ -20,8 +20,7 @@ const MedicalDashboard = () => {
       content: 'La pneumonie est une infection respiratoire aigüe qui touche les alvéoles pulmonaires. Elle se manifeste par une toux, fièvre, douleur thoracique et difficultés respiratoires.',
       source: 'VIDAL',
       icon: '🔬',
-      priority: 'high',
-      readTime: '8 min'
+      priority: 'high'
     },
     {
       id: 2,
@@ -30,8 +29,7 @@ const MedicalDashboard = () => {
       content: 'L\'amoxicilline reste le traitement de première intention. En cas d\'allergie, les macrolides ou fluoroquinolones sont recommandés selon le terrain.',
       source: 'Recommandations françaises',
       icon: '💊',
-      priority: 'high',
-      readTime: '6 min'
+      priority: 'high'
     },
     {
       id: 3,
@@ -40,8 +38,7 @@ const MedicalDashboard = () => {
       content: 'La vaccination pneumococcique est recommandée chez les personnes à risque : >65 ans, immunodéprimés, insuffisants cardiaques ou respiratoires.',
       source: 'Calendrier vaccinal',
       icon: '💉',
-      priority: 'medium',
-      readTime: '5 min'
+      priority: 'medium'
     },
     {
       id: 4,
@@ -50,8 +47,7 @@ const MedicalDashboard = () => {
       content: 'Les pneumonies acquises sous ventilation mécanique nécessitent une antibiothérapie large incluant les bacilles Gram négatifs et staphylocoques.',
       source: 'SRLF',
       icon: '🏥',
-      priority: 'high',
-      readTime: '12 min'
+      priority: 'high'
     },
     {
       id: 5,
@@ -60,8 +56,7 @@ const MedicalDashboard = () => {
       content: 'Chez les patients immunodéprimés, élargir le spectre aux germes opportunistes : Pneumocystis, Aspergillus, CMV selon le degré d\'immunosuppression.',
       source: 'Infectiologie',
       icon: '🛡️',
-      priority: 'high',
-      readTime: '10 min'
+      priority: 'high'
     },
     {
       id: 6,
@@ -70,8 +65,7 @@ const MedicalDashboard = () => {
       content: 'La radiographie thoracique reste l\'examen de référence. Le scanner n\'est indiqué qu\'en cas de complications ou de diagnostic différentiel.',
       source: 'Radiologie',
       icon: '📱',
-      priority: 'medium',
-      readTime: '7 min'
+      priority: 'medium'
     }
   ];
 
@@ -195,7 +189,7 @@ const MedicalDashboard = () => {
         marginBottom: '2rem', 
         padding: '1.5rem', 
         borderRadius: '12px', 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #0056b3 0%, #0056b3 100%)',
         color: 'white',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
       }}>
@@ -253,7 +247,7 @@ const MedicalDashboard = () => {
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' 
           }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: '600', marginBottom: '1rem' }}>
-              🔔 Actualités médicales
+               Actualités médicales
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {realUpdates.map(update => (
@@ -301,7 +295,7 @@ const MedicalDashboard = () => {
             padding: '1rem', 
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' 
           }}>
-            <h3 style={{ marginBottom: '1rem' }}>🏷️ Catégories</h3>
+            <h3 style={{ marginBottom: '1rem' }}> Catégories</h3>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {categories.map(category => (
                 <button
@@ -362,8 +356,8 @@ const MedicalDashboard = () => {
                       {resource.content}
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94A3B8' }}>
-                      <span>📖 {resource.source}</span>
-                      <span>⏱️ {resource.readTime}</span>
+                      <span> {resource.source}</span>
+                      <span> {resource.readTime}</span>
                     </div>
                   </div>
                 </div>
@@ -382,7 +376,7 @@ const MedicalDashboard = () => {
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' 
         }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-            📋 Recommandations Officielles
+             Recommandations Officielles
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {realGuidelines.map(guideline => (
@@ -413,7 +407,7 @@ const MedicalDashboard = () => {
                       {guideline.type}
                     </span>
                     <p style={{ fontSize: '0.9rem', color: '#64748B', margin: '0.5rem 0 0 0' }}>
-                      📅 {guideline.date}
+                       {guideline.date}
                     </p>
                   </div>
                 </div>
