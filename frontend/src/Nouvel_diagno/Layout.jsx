@@ -11,11 +11,11 @@ const Layout = () => {
   const menuItems = [
     { path: '/app', name: 'Tableau de bord', icon: '📊' },
     { path: '/app/new-analysis', name: 'Nouvelle analyse', icon: '🖼️' },
-    { path: '/app/image-library', name: 'Bibliothèque', icon: '📚' },
+    // { path: '/app/image-library', name: 'Bibliothèque', icon: '📚' },
     { path: '/app/patients', name: 'Patients', icon: '👨‍⚕️' },
     { path: '/app/history', name: 'Historique', icon: '🕒' },
-    { path: '/app/statistics', name: 'Statistiques', icon: '📈' },
-    { path: '/app/settings', name: 'Paramètres', icon: '⚙️' }
+    // { path: '/app/statistics', name: 'Statistiques', icon: '📈' },
+    // { path: '/app/settings', name: 'Paramètres', icon: '⚙️' }
   ];
 
   // Récupérer le nom d'utilisateur depuis localStorage
