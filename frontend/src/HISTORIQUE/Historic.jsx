@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiChevronDown, FiEye, FiUser, FiClock } from 'react-icons/fi';
+import { FiCalendar, FiChevronDown, FiEye, FiUser, FiClock, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 const Historic = () => {
   const [timeFilter, setTimeFilter] = useState('week');
@@ -7,12 +7,17 @@ const Historic = () => {
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
   const [error, setError] = useState(null);
+  
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
 
   // Charger l'historique
   const loadHistory = async (filter = 'week') => {
     try {
       setLoading(true);
       setError(null);
+      setCurrentPage(1); // Reset à la première page lors d'un nouveau filtre
       
       const token = localStorage.getItem('token');
       
@@ -66,6 +71,28 @@ const Historic = () => {
 
   const closeDetails = () => {
     setSelectedItem(null);
+  };
+
+  // Calculs de pagination
+  const totalPages = Math.ceil(historyItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = historyItems.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
   if (loading) {
@@ -122,9 +149,16 @@ const Historic = () => {
         paddingBottom: '20px',
         borderBottom: '2px solid #ecf0f1'
       }}>
-        <h1 style={{ color: '#2c3e50', fontSize: '28px' }}>
-          Historique des analyses
-        </h1>
+        <div>
+          <h1 style={{ color: '#2c3e50', fontSize: '28px', margin: 0 }}>
+            Historique des analyses
+          </h1>
+          {historyItems.length > 0 && (
+            <p style={{ color: '#7f8c8d', fontSize: '14px', margin: '5px 0 0 0' }}>
+              {historyItems.length} analyse{historyItems.length > 1 ? 's' : ''} trouvée{historyItems.length > 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <FiCalendar style={{ color: '#7f8c8d' }} />
@@ -147,10 +181,10 @@ const Historic = () => {
         </div>
       </div>
 
-      {/* Liste des analyses */}
+      {/* Liste des analyses avec pagination */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {historyItems.length > 0 ? (
-          historyItems.map(item => (
+        {currentItems.length > 0 ? (
+          currentItems.map(item => (
             <div 
               key={item.id} 
               style={{
@@ -322,6 +356,103 @@ const Historic = () => {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '10px',
+          marginTop: '30px',
+          padding: '20px 0'
+        }}>
+          <button
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '10px 15px',
+              backgroundColor: currentPage === 1 ? '#ecf0f1' : '#3498db',
+              color: currentPage === 1 ? '#95a5a6' : 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              transition: 'background-color 0.2s'
+            }}
+          >
+            <FiChevronLeft /> Précédent
+          </button>
+
+          <div style={{ display: 'flex', gap: '5px' }}>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(pageNumber => (
+              <button
+                key={pageNumber}
+                onClick={() => goToPage(pageNumber)}
+                style={{
+                  padding: '10px 15px',
+                  backgroundColor: currentPage === pageNumber ? '#3498db' : 'white',
+                  color: currentPage === pageNumber ? 'white' : '#2c3e50',
+                  border: currentPage === pageNumber ? 'none' : '2px solid #ecf0f1',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: currentPage === pageNumber ? 'bold' : 'normal',
+                  transition: 'all 0.2s',
+                  minWidth: '40px'
+                }}
+                onMouseOver={(e) => {
+                  if (currentPage !== pageNumber) {
+                    e.target.style.backgroundColor = '#ecf0f1';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (currentPage !== pageNumber) {
+                    e.target.style.backgroundColor = 'white';
+                  }
+                }}
+              >
+                {pageNumber}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '10px 15px',
+              backgroundColor: currentPage === totalPages ? '#ecf0f1' : '#3498db',
+              color: currentPage === totalPages ? '#95a5a6' : 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              transition: 'background-color 0.2s'
+            }}
+          >
+            Suivant <FiChevronRight />
+          </button>
+        </div>
+      )}
+
+      {/* Informations de pagination */}
+      {historyItems.length > 0 && (
+        <div style={{
+          textAlign: 'center',
+          color: '#7f8c8d',
+          fontSize: '14px',
+          marginTop: '10px'
+        }}>
+          Affichage de {startIndex + 1} à {Math.min(endIndex, historyItems.length)} sur {historyItems.length} analyse{historyItems.length > 1 ? 's' : ''}
+        </div>
+      )}
 
       {/* Modal pour les détails */}
       {selectedItem && (
