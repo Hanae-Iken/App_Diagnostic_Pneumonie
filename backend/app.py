@@ -33,7 +33,7 @@ app.config["db"] = db
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(results_bp)
 app.register_blueprint(upload_bp)
-app.register_blueprint(history_bp)
+app.register_blueprint(history_bp) 
 app.register_blueprint(analyze_bp)
 app.register_blueprint(patients_bp, url_prefix='/api')  # ← Cette ligne fonctionne maintenant
 
